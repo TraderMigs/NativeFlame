@@ -1,0 +1,132 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --parchment: #F5EDD9;
+    --mahogany: #1C0A00;
+    --gold: #C8922A;
+    --teal: #4AADAA;
+    --cream: #FFF8EE;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    background-color: var(--cream);
+    color: var(--mahogany);
+    font-family: 'Lora', serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  .btn-gold {
+    @apply bg-gold text-cream font-cinzel font-semibold tracking-widest uppercase text-sm px-8 py-3 
+           transition-all duration-300 hover:bg-gold-light hover:shadow-lg active:scale-95;
+  }
+
+  .btn-outline {
+    @apply border-2 border-gold text-gold font-cinzel font-semibold tracking-widest uppercase text-sm px-8 py-3 
+           transition-all duration-300 hover:bg-gold hover:text-cream active:scale-95;
+  }
+
+  .btn-dark {
+    @apply bg-mahogany text-cream font-cinzel font-semibold tracking-widest uppercase text-sm px-8 py-3 
+           transition-all duration-300 hover:bg-mahogany-light hover:shadow-lg active:scale-95;
+  }
+
+  .section-title {
+    @apply font-cinzel text-3xl md:text-4xl font-bold text-mahogany tracking-wide;
+  }
+
+  .gold-divider {
+    @apply w-24 h-px bg-gold mx-auto my-4;
+  }
+
+  .card-candle {
+    @apply bg-white border border-parchment-dark overflow-hidden transition-all duration-300 
+           hover:shadow-xl hover:-translate-y-1;
+  }
+
+  .nav-link {
+    @apply font-raleway font-semibold tracking-widest uppercase text-xs text-mahogany 
+           hover:text-gold transition-colors duration-200;
+  }
+
+  .input-field {
+    @apply w-full border border-parchment-dark bg-cream px-4 py-3 font-lora text-mahogany 
+           focus:outline-none focus:border-gold transition-colors duration-200;
+  }
+
+  .texture-overlay {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  }
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.7s ease forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.6s ease forwards;
+}
+
+.animate-delay-100 { animation-delay: 0.1s; opacity: 0; }
+.animate-delay-200 { animation-delay: 0.2s; opacity: 0; }
+.animate-delay-300 { animation-delay: 0.3s; opacity: 0; }
+.animate-delay-400 { animation-delay: 0.4s; opacity: 0; }
+.animate-delay-500 { animation-delay: 0.5s; opacity: 0; }
+
+/* Cart drawer */
+.cart-drawer {
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Hero text shadow */
+.hero-text-shadow {
+  text-shadow: 0 2px 20px rgba(0,0,0,0.5);
+}
+
+/* Gold gradient text */
+.text-gold-gradient {
+  background: linear-gradient(135deg, #C8922A 0%, #DEB654 50%, #C8922A 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--parchment); }
+::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 3px; }
+
+/* Loading skeleton */
+.skeleton {
+  background: linear-gradient(90deg, #e8dcc8 25%, #f5edd9 50%, #e8dcc8 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
