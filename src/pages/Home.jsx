@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import ProductCard from '../components/ProductCard'
+import EmailSignup from '../components/EmailSignup'
 
 export default function Home() {
   const [featured, setFeatured] = useState([])
@@ -224,12 +225,20 @@ export default function Home() {
             <div className="w-64 h-64 rounded-full border-4 border-gold" />
           </div>
           <div className="relative z-10">
-            <p className="font-raleway text-xs tracking-widest uppercase text-gold/60 mb-2">Premium Dark Series</p>
+            <p className="font-raleway text-xs tracking-widest uppercase text-gold/60 mb-2">Coffee House Collection Series</p>
             <h3 className="font-cinzel text-2xl md:text-3xl font-bold text-cream mb-4">Bold & Refined</h3>
             <Link to="/shop?collection=dark" className="btn-outline border-gold text-gold hover:bg-gold hover:text-cream text-xs px-6 py-2">
               Explore
             </Link>
           </div>
+        </div>
+      </section>
+
+
+      {/* ═══ EMAIL SIGNUP ═══ */}
+      <section className="py-20 px-4 bg-parchment">
+        <div className="max-w-xl mx-auto">
+          <EmailSignup dark={false} />
         </div>
       </section>
 

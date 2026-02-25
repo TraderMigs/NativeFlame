@@ -11,7 +11,7 @@ export default function ProductCard({ product }) {
     ? getImageUrl(product.images[0])
     : null
 
-  const isDark = product.collection === 'Premium Dark'
+  const isDark = product.collection === 'Coffee House Collection'
 
   async function handleAddToCart(e) {
     e.preventDefault()

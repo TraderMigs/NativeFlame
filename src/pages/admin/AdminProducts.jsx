@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { supabase, getImageUrl } from '../../lib/supabase'
 
 const EMPTY_FORM = {
-  name: '', collection: 'Standard', description: '', scent_notes: '',
+  name: '', collection: 'Standard', product_type: 'candle', description: '', scent_notes: '',
   price: '', size_oz: '7', stock: '', is_active: true
 }
 
@@ -194,7 +194,18 @@ export default function AdminProducts() {
                     <select value={form.collection} onChange={e => setForm(p => ({...p, collection: e.target.value}))} className="input-field">
                       <option>Standard</option>
                       <option>Turnbow Collection</option>
-                      <option>Premium Dark</option>
+                      <option>Coffee House Collection</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="font-raleway text-xs uppercase tracking-wider text-mahogany/50 block mb-1">Product Type</label>
+                    <select value={form.product_type} onChange={e => setForm(p => ({...p, product_type: e.target.value}))} className="input-field">
+                      <option value="candle">🕯️ Candle</option>
+                      <option value="wax_melt">🫧 Wax Melt</option>
+                      <option value="room_spray">🌿 Room Spray</option>
+                      <option value="car_freshener">🚗 Car Freshener</option>
                     </select>
                   </div>
                 </div>

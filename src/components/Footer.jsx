@@ -11,8 +11,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="space-y-4">
             <div>
-              <h3 className="font-cinzel text-2xl font-bold text-gold tracking-wider">Native Flame</h3>
-              <p className="font-raleway text-xs tracking-widest uppercase text-gold-pale mt-1">Candle Company</p>
+              <img src="/logo.jpg" alt="Native Flame Candle Company" className="h-16 w-auto object-contain" />
             </div>
             <div className="w-12 h-px bg-gold"></div>
             <p className="font-lora text-sm text-cream/80 italic leading-relaxed">

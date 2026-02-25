@@ -21,7 +21,7 @@ export default function About() {
           <h1 className="font-cinzel text-4xl md:text-5xl font-bold text-cream hero-text-shadow mb-4">Our Story</h1>
           <div className="flex items-center justify-center gap-4">
             <div className="h-px w-16 bg-gold/50" />
-            <p className="font-lora text-sm italic text-cream/60">Rooted in Heritage</p>
+            <p className="font-lora text-sm italic text-cream/60">Rooted in Heritage. Lit by the Spirit.</p>
             <div className="h-px w-16 bg-gold/50" />
           </div>
         </div>
@@ -40,31 +40,46 @@ export default function About() {
 
           <div className="prose max-w-none space-y-6">
             <p className="font-lora text-lg text-mahogany/80 leading-relaxed text-center italic">
-              "Every candle I make is a little prayer — a small act of faith poured into wax and wick,
-              sent out into the world to bring someone a moment of peace."
+              "The flame is more than light. It reflects my faith in God, my deep love for family,
+              and the Holy Spirit that burns steadily within my heart."
             </p>
 
             <div className="w-16 h-px bg-gold mx-auto" />
 
             <p className="font-lora text-base text-mahogany/70 leading-relaxed">
-              Native Flame was born from something simple: a love of home, heritage, and the comfort
-              that comes from a single burning flame. Jennifer started making candles in the heart of
-              Taylor County, Texas — in the same West Texas hill country where her family has lived
-              for generations.
+              Native Flame Candles was born from love, remembrance, and heritage. The name honors
+              Jennifer's mother and her Native American roots — a legacy of strength, faith, and quiet
+              resilience that continues to guide her life.
             </p>
 
             <p className="font-lora text-base text-mahogany/70 leading-relaxed">
-              Each scent in the collection is crafted to tell a story — the cedar and leather of the
-              <span className="font-semibold text-mahogany"> Turnbow Collection</span>, named for the family
-              land; the clean rain of <span className="font-semibold text-mahogany">Whispering Rain</span>,
-              inspired by stormy evenings on the porch; the deep, smoky warmth of
-              <span className="font-semibold text-mahogany"> Midnight Saddle</span>, for those who love the
-              rugged outdoors.
+              Every candle is hand-poured with intention, created as a gentle reminder that love does
+              not end — it lingers, glows, and carries forward through generations. Each scent in the
+              collection tells a story: the bold leather and bourbon of{' '}
+              <span className="font-semibold text-mahogany">Turnbow</span> — Jennifer's signature scent;
+              the clean rain of{' '}
+              <span className="font-semibold text-mahogany">Whispering Rain</span>,
+              inspired by stormy evenings on the porch; the deep, smoky warmth of{' '}
+              <span className="font-semibold text-mahogany">Midnight Saddle</span>,
+              for those who love the rugged outdoors.
             </p>
 
             <p className="font-lora text-base text-mahogany/70 leading-relaxed">
-              All candles are small-batch, hand-poured using a clean soy blend with cotton wicks.
-              No shortcuts. No fillers. Just honest ingredients and an honest pour — every single time.
+              Each Native Flame candle represents remembrance, connection, and the sacred flame that
+              lives within us all — a tribute to a Native American mother and the enduring love
+              that never fades.
+            </p>
+
+            <div className="bg-parchment border-l-4 border-gold px-6 py-5 my-8">
+              <p className="font-lora text-base italic text-mahogany/80 leading-relaxed">
+                "Rooted in Heritage. Lit by the Spirit."
+              </p>
+            </div>
+
+            <p className="font-lora text-base text-mahogany/70 leading-relaxed">
+              All candles are small-batch, hand-poured using a quality soy blend with cotton wicks
+              and premium fragrance oils. No shortcuts. Just honest ingredients and an honest pour —
+              every single time.
             </p>
           </div>
         </div>
@@ -87,18 +102,18 @@ export default function About() {
               },
               {
                 icon: '🌿',
-                title: 'Clean Ingredients',
-                body: 'Soy blend wax. Cotton wicks. Premium fragrance oils. No toxins, no tricks — just what belongs in a quality candle.'
+                title: 'Quality Ingredients',
+                body: 'Soy blend wax. Cotton wicks. Premium fragrance oils. Only what belongs in a quality candle.'
               },
               {
                 icon: '🤠',
                 title: 'Texas Proud',
-                body: 'Made in Buffalo Gap, Texas. We\'re as West Texas as it gets — and proud of every bit of it.'
+                body: "Made in Buffalo Gap, Texas. We're as West Texas as it gets — and proud of every bit of it."
               },
               {
                 icon: '🦅',
                 title: 'Heritage Honored',
-                body: 'The crossed feathers in our logo represent the traditions, family names, and stories that shaped who we are.'
+                body: 'The crossed feathers in our logo honor Native American heritage — the traditions, strength, and love that shaped who we are.'
               },
             ].map(({ icon, title, body }) => (
               <div key={title} className="bg-white p-6 border border-parchment-dark text-center space-y-3">
