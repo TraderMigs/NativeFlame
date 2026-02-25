@@ -37,12 +37,12 @@ export default function Navbar() {
       isLight ? 'bg-cream shadow-md border-b border-parchment-dark' : 'bg-transparent'
     }`}>
       <div className="max-w-7xl mx-auto px-4 md:px-8">
-        <div className="flex items-center justify-between h-16 md:h-20">
+        <div className="flex items-center justify-between h-20 md:h-24">
 
           {/* ── LOGO (transparent PNG) ── */}
           <Link to="/" className="flex items-center">
             <img src="/logo.png" alt="Native Flame Candle Company"
-              className="h-12 md:h-16 w-auto object-contain drop-shadow-lg" />
+              className="h-14 md:h-20 w-auto object-contain" />
           </Link>
 
           {/* ── DESKTOP NAV ── */}

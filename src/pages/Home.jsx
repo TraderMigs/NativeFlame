@@ -38,8 +38,8 @@ export default function Home() {
           {/* ── THE LOGO — large, glowing, transparent ── */}
           <div className="animate-fade-in-up flex justify-center mb-6">
             <img src="/logo.png" alt="Native Flame Candle Company"
-              className="w-full max-w-xs md:max-w-sm lg:max-w-md object-contain"
-              style={{ filter:'drop-shadow(0 0 40px rgba(200,146,42,0.5)) drop-shadow(0 0 80px rgba(200,146,42,0.2))' }}
+              className="w-full object-contain"
+              style={{ maxWidth: 'min(680px, 90vw)' }}
             />
           </div>
 
