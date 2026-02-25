@@ -103,6 +103,18 @@ export default function AdminDashboard() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </Link>
+
+          <Link to="/admin/site-settings"
+            className="flex items-center gap-4 bg-white border border-parchment-dark p-6 hover:border-gold transition-colors group">
+            <div className="text-3xl">🎨</div>
+            <div>
+              <h3 className="font-cinzel font-semibold text-mahogany tracking-wide group-hover:text-gold transition-colors">Site Appearance</h3>
+              <p className="font-raleway text-xs text-mahogany/50 mt-1">Colors · Page text · Section styles</p>
+            </div>
+            <svg className="w-5 h-5 ml-auto text-mahogany/20 group-hover:text-gold transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
         </div>
 
         {/* Recent Orders */}
