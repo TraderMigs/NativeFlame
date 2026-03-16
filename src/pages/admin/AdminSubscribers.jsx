@@ -20,12 +20,18 @@ export default function AdminSubscribers() {
 
   async function load() {
     setLoading(true)
-    const { data } = await supabase
-      .from('email_subscribers')
-      .select('*')
-      .order('subscribed_at', { ascending: false })
-    setSubs(data || [])
-    setLoading(false)
+    try {
+      const { data, error } = await supabase
+        .from('email_subscribers')
+        .select('*')
+        .order('subscribed_at', { ascending: false })
+      if (error) throw error
+      setSubs(data || [])
+    } catch (_) {
+      setSubs([])
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function handleDelete(id) {
