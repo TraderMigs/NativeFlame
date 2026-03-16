@@ -19,7 +19,8 @@ import AdminLogin        from './pages/admin/AdminLogin'
 import AdminDashboard    from './pages/admin/AdminDashboard'
 import AdminProducts     from './pages/admin/AdminProducts'
 import AdminOrders       from './pages/admin/AdminOrders'
-import AdminSiteSettings from './pages/admin/AdminSiteSettings'
+import AdminSiteSettings  from './pages/admin/AdminSiteSettings'
+import AdminSubscribers  from './pages/admin/AdminSubscribers'
 
 function PublicLayout({ children }) {
   return (
@@ -52,7 +53,8 @@ export default function App() {
             <Route path="/admin"               element={<AdminDashboard/>} />
             <Route path="/admin/products"      element={<AdminProducts/>} />
             <Route path="/admin/orders"        element={<AdminOrders/>} />
-            <Route path="/admin/site-settings" element={<AdminSiteSettings/>} />
+            <Route path="/admin/site-settings"  element={<AdminSiteSettings/>} />
+            <Route path="/admin/subscribers"   element={<AdminSubscribers/>} />
           </Routes>
         </CartProvider>
       </SiteSettingsProvider>
