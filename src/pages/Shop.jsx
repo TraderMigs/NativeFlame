@@ -16,6 +16,7 @@ const PRODUCT_TYPES = [
 export default function Shop() {
   const [products,  setProducts]  = useState([])
   const [loading,   setLoading]   = useState(true)
+  const [fetchError, setFetchError] = useState(false)
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
 
@@ -73,19 +74,26 @@ export default function Shop() {
   useEffect(() => {
     async function loadProducts() {
       setLoading(true)
-      let query = supabase.from('products').select('*').eq('is_active', true)
+      setFetchError(false)
+      try {
+        let query = supabase.from('products').select('*').eq('is_active', true)
 
-      if (activeCollection !== 'All') query = query.eq('collection', activeCollection)
-      if (activeType)                 query = query.eq('product_type', activeType)
+        if (activeCollection !== 'All') query = query.eq('collection', activeCollection)
+        if (activeType)                 query = query.eq('product_type', activeType)
 
-      if (sortBy === 'newest')     query = query.order('created_at', { ascending: false })
-      else if (sortBy === 'price-asc')  query = query.order('price', { ascending: true  })
-      else if (sortBy === 'price-desc') query = query.order('price', { ascending: false })
-      else if (sortBy === 'name')       query = query.order('name',  { ascending: true  })
+        if (sortBy === 'newest')          query = query.order('created_at', { ascending: false })
+        else if (sortBy === 'price-asc')  query = query.order('price', { ascending: true  })
+        else if (sortBy === 'price-desc') query = query.order('price', { ascending: false })
+        else if (sortBy === 'name')       query = query.order('name',  { ascending: true  })
 
-      const { data } = await query
-      setProducts(data || [])
-      setLoading(false)
+        const { data, error } = await query
+        if (error) throw error
+        setProducts(data || [])
+      } catch (_) {
+        setFetchError(true)
+      } finally {
+        setLoading(false)
+      }
     }
     loadProducts()
   }, [activeType, activeCollection, sortBy])
@@ -203,6 +211,13 @@ export default function Shop() {
                 </div>
               </div>
             ))}
+          </div>
+        ) : fetchError ? (
+          <div className="text-center py-24">
+            <div className="text-5xl mb-4">⚠️</div>
+            <h3 className="font-cinzel text-xl text-mahogany mb-2">Couldn't load products</h3>
+            <p className="font-lora italic text-mahogany/50 mb-6">Check your connection and try again.</p>
+            <button onClick={() => window.location.reload()} className="btn-outline">Retry</button>
           </div>
         ) : products.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
