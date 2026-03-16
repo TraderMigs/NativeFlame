@@ -6,6 +6,7 @@ export default function AdminDashboard() {
   const navigate = useNavigate()
   const [stats, setStats] = useState({ products: 0, orders: 0, revenue: 0, pending: 0 })
   const [recentOrders, setRecentOrders] = useState([])
+  const [lowStock,     setLowStock]     = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -13,9 +14,10 @@ export default function AdminDashboard() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { navigate('/admin/login'); return }
 
-      const [{ count: products }, { data: orders }] = await Promise.all([
+      const [{ count: products }, { data: orders }, { data: lowStockData }] = await Promise.all([
         supabase.from('products').select('*', { count: 'exact', head: true }).eq('is_active', true),
-        supabase.from('orders').select('*').order('created_at', { ascending: false }).limit(5)
+        supabase.from('orders').select('*').order('created_at', { ascending: false }).limit(5),
+        supabase.from('products').select('id,name,stock').eq('is_active', true).lte('stock', 5).order('stock', { ascending: true })
       ])
 
       const allOrders = orders || []
@@ -24,6 +26,7 @@ export default function AdminDashboard() {
 
       setStats({ products: products || 0, orders: allOrders.length, revenue, pending })
       setRecentOrders(allOrders)
+      setLowStock(lowStockData || [])
       setLoading(false)
     }
     load()
@@ -128,6 +131,33 @@ export default function AdminDashboard() {
             </svg>
           </Link>
         </div>
+
+        {/* Low Stock Alert */}
+        {lowStock.length > 0 && (
+          <div className="mb-8 bg-amber-50 border border-amber-200 px-6 py-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">⚠️</span>
+                <h2 className="font-cinzel text-sm font-semibold text-amber-800">Low Stock Alert</h2>
+              </div>
+              <Link to="/admin/products" className="font-raleway text-xs text-gold uppercase tracking-wider hover:underline">
+                Manage Products
+              </Link>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {lowStock.map(p => (
+                <span key={p.id}
+                  className={`font-raleway text-xs px-3 py-1.5 border ${
+                    p.stock === 0
+                      ? 'bg-red-50 border-red-200 text-red-600'
+                      : 'bg-amber-50 border-amber-300 text-amber-700'
+                  }`}>
+                  {p.name} — {p.stock === 0 ? 'Out of Stock' : `${p.stock} left`}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Recent Orders */}
         <div>
