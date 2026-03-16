@@ -66,7 +66,7 @@ export default function OrderConfirmation() {
 
         <div className="space-y-3">
           <p className="font-lora text-sm text-mahogany/50 italic">
-            A confirmation will be sent to{' '}
+            Your order has been received. Jennifer will be in touch at{' '}
             <span className="text-mahogany font-semibold">{email || 'your email'}</span>
           </p>
           <p className="font-raleway text-xs text-mahogany/30">
