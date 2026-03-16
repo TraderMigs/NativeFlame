@@ -41,10 +41,8 @@ export default function Navbar() {
 
           {/* ── LOGO (transparent PNG) ── */}
           <Link to="/" className="flex items-center">
-            <div className="bg-parchment/60 rounded px-1">
-              <img src="/logo.png" alt="Native Flame Candle Company"
-                className="h-14 md:h-20 w-auto object-contain" />
-            </div>
+            <img src="/logo.png" alt="Native Flame Candle Company"
+              className="h-14 md:h-20 w-auto object-contain" />
           </Link>
 
           {/* ── DESKTOP NAV ── */}
