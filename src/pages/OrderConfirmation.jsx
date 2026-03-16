@@ -6,17 +6,31 @@ export default function OrderConfirmation() {
   const [searchParams] = useSearchParams()
   const orderId = searchParams.get('order')
   const email = searchParams.get('email')
-  const [order, setOrder] = useState(null)
+  const [order,   setOrder]   = useState(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (orderId) {
-      supabase.from('orders').select('*').eq('id', orderId).single()
-        .then(({ data }) => setOrder(data))
+    async function fetchOrder() {
+      if (!orderId) { setLoading(false); return }
+      try {
+        const { data } = await supabase.from('orders').select('*').eq('id', orderId).single()
+        setOrder(data)
+      } catch (_) {
+        // order details unavailable — page still shows confirmation
+      } finally {
+        setLoading(false)
+      }
     }
+    fetchOrder()
   }, [orderId])
 
   return (
     <div className="min-h-screen pt-24 bg-cream flex items-center justify-center px-4">
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-cream z-10">
+          <div className="w-10 h-10 border-2 border-gold border-t-transparent rounded-full animate-spin"/>
+        </div>
+      )}
       <div className="max-w-lg w-full text-center py-16 space-y-8">
 
         {/* Success Icon */}
