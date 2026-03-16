@@ -32,12 +32,10 @@ export default function Home() {
 
         <div className="relative z-10 text-center px-4 max-w-2xl mx-auto">
           <div className="animate-fade-in-up flex justify-center mb-6">
-            <div className="bg-parchment/15 rounded-xl p-2">
-              <img src="/logo.png" alt="Native Flame Candle Company"
-                className="w-full object-contain"
-                style={{ maxWidth: 'min(680px, 90vw)' }}
-              />
-            </div>
+            <img src="/logo.png" alt="Native Flame Candle Company"
+              className="w-full object-contain"
+              style={{ maxWidth: 'min(680px, 90vw)' }}
+            />
           </div>
 
           <div className="animate-fade-in-up flex items-center justify-center gap-4 mb-5" style={{ animationDelay:'0.15s' }}>
