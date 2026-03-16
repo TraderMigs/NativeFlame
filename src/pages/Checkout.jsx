@@ -105,7 +105,7 @@ export default function Checkout() {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen pt-20 bg-cream flex items-center justify-center text-center px-4">
+      <div className="min-h-screen pt-24 bg-cream flex items-center justify-center text-center px-4">
         <div className="space-y-4">
           <h2 className="font-cinzel text-2xl font-bold text-mahogany">Nothing to checkout</h2>
           <Link to="/shop" className="btn-gold inline-block">Shop Now</Link>
@@ -115,7 +115,7 @@ export default function Checkout() {
   }
 
   return (
-    <div className="min-h-screen pt-20 bg-cream">
+    <div className="min-h-screen pt-24 bg-cream">
       <div className="max-w-5xl mx-auto px-4 md:px-8 py-12">
         <h1 className="font-cinzel text-3xl font-bold text-mahogany mb-2">Checkout</h1>
         <p className="font-raleway text-xs text-mahogany/40 uppercase tracking-wider mb-10">Secure Order · Native Flame Candle Co.</p>

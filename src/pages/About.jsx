@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 
 export default function About() {
   return (
-    <div className="min-h-screen pt-20 bg-cream">
+    <div className="min-h-screen pt-24 bg-cream">
 
       {/* Hero */}
       <div

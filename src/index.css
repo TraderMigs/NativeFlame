@@ -24,6 +24,7 @@
 
   html {
     scroll-behavior: smooth;
+    overflow-x: hidden;
   }
 }
 
@@ -63,7 +64,8 @@
 
   .input-field {
     @apply w-full border border-parchment-dark bg-cream px-4 py-3 font-lora text-mahogany 
-           focus:outline-none focus:border-gold transition-colors duration-200;
+           focus:outline-none focus:border-gold transition-colors duration-200 text-base;
+    font-size: 16px; /* Prevents iOS auto-zoom on focus */
   }
 
   .texture-overlay {
@@ -117,6 +119,15 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* iOS safe area support */
+body {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+nav {
+  padding-top: env(safe-area-inset-top);
 }
 
 /* Scrollbar */

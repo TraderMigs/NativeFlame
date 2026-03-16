@@ -16,7 +16,7 @@ export default function OrderConfirmation() {
   }, [orderId])
 
   return (
-    <div className="min-h-screen pt-20 bg-cream flex items-center justify-center px-4">
+    <div className="min-h-screen pt-24 bg-cream flex items-center justify-center px-4">
       <div className="max-w-lg w-full text-center py-16 space-y-8">
 
         {/* Success Icon */}

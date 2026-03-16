@@ -44,12 +44,13 @@ export default function CartDrawer() {
             <div className="flex flex-col items-center justify-center h-full text-center gap-4 py-16">
               <div className="text-6xl">🕯️</div>
               <p className="font-cinzel text-mahogany/60 text-sm">Your cart is empty</p>
-              <button
+              <Link
+                to="/shop"
                 onClick={() => setIsOpen(false)}
                 className="btn-outline text-xs px-6 py-2"
               >
-                <Link to="/shop">Browse Candles</Link>
-              </button>
+                Browse Candles
+              </Link>
             </div>
           ) : (
             items.map(item => (

@@ -8,7 +8,7 @@ export default function Cart() {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen pt-20 bg-cream flex items-center justify-center text-center px-4">
+      <div className="min-h-screen pt-24 bg-cream flex items-center justify-center text-center px-4">
         <div className="space-y-6">
           <div className="text-8xl">🕯️</div>
           <h2 className="font-cinzel text-3xl font-bold text-mahogany">Your cart is empty</h2>
@@ -23,7 +23,7 @@ export default function Cart() {
   const total = subtotal + shipping
 
   return (
-    <div className="min-h-screen pt-20 bg-cream">
+    <div className="min-h-screen pt-24 bg-cream">
       <div className="max-w-5xl mx-auto px-4 md:px-8 py-12">
         <div className="mb-8">
           <h1 className="font-cinzel text-3xl md:text-4xl font-bold text-mahogany">Shopping Cart</h1>

@@ -91,7 +91,7 @@ export default function Shop() {
   }, [activeType, activeCollection, sortBy])
 
   return (
-    <div className="min-h-screen pt-20 bg-cream">
+    <div className="min-h-screen pt-24 bg-cream">
 
       {/* Page Header */}
       <div className="relative py-20 px-4 text-center overflow-hidden"

@@ -63,7 +63,7 @@ export default function ProductDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen pt-20 bg-cream flex items-center justify-center">
+      <div className="min-h-screen pt-24 bg-cream flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="w-16 h-16 border-2 border-gold border-t-transparent rounded-full animate-spin mx-auto"/>
           <p className="font-lora italic text-mahogany/50">Loading...</p>
@@ -74,7 +74,7 @@ export default function ProductDetail() {
 
   if (!product) {
     return (
-      <div className="min-h-screen pt-20 bg-cream flex items-center justify-center text-center px-4">
+      <div className="min-h-screen pt-24 bg-cream flex items-center justify-center text-center px-4">
         <div>
           <div className="text-6xl mb-4">🕯️</div>
           <h2 className="font-cinzel text-2xl text-mahogany mb-4">Product Not Found</h2>
@@ -88,7 +88,7 @@ export default function ProductDetail() {
   const images = product.images && product.images.length > 0 ? product.images : [null]
 
   return (
-    <div className="min-h-screen pt-20 bg-cream">
+    <div className="min-h-screen pt-24 bg-cream">
 
       {/* Breadcrumb */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-4">

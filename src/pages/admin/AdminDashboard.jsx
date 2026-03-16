@@ -172,6 +172,7 @@ export default function AdminDashboard() {
             </div>
           ) : (
             <div className="bg-white border border-parchment-dark overflow-hidden">
+              <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-parchment border-b border-parchment-dark">
                   <tr>
@@ -204,6 +205,7 @@ export default function AdminDashboard() {
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           )}
         </div>
