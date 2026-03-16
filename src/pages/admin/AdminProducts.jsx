@@ -335,6 +335,28 @@ export default function AdminProducts() {
           </div>
         )}
 
+        {/* Low Stock Banner */}
+        {products.filter(p => p.stock <= 5 && p.is_active).length > 0 && (
+          <div className="mb-6 bg-amber-50 border border-amber-200 px-5 py-4 flex items-start gap-3">
+            <span className="text-xl shrink-0">⚠️</span>
+            <div className="flex-1">
+              <p className="font-cinzel text-sm font-semibold text-amber-800 mb-1">Low Stock Alert</p>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {products.filter(p => p.stock <= 5 && p.is_active).map(p => (
+                  <span key={p.id}
+                    className={`font-raleway text-xs px-3 py-1 border ${
+                      p.stock === 0
+                        ? 'bg-red-50 border-red-200 text-red-600'
+                        : 'bg-amber-50 border-amber-300 text-amber-700'
+                    }`}>
+                    {p.name} — {p.stock === 0 ? 'Out of Stock' : `${p.stock} left`}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Products Table */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
@@ -368,7 +390,24 @@ export default function AdminProducts() {
                     </div>
                     <div className="text-right shrink-0">
                       <p className="font-cinzel font-bold text-gold">${Number(product.price).toFixed(2)}</p>
-                      <p className="font-raleway text-xs text-mahogany/40">Stock: {product.stock}</p>
+                      <p className={`font-raleway text-xs font-semibold ${
+                        product.stock === 0
+                          ? 'text-red-500'
+                          : product.stock <= 3
+                          ? 'text-red-400'
+                          : product.stock <= 10
+                          ? 'text-amber-500'
+                          : 'text-mahogany/40'
+                      }`}>
+                        {product.stock === 0
+                          ? 'Out of Stock'
+                          : product.stock <= 3
+                          ? `Only ${product.stock} left!`
+                          : product.stock <= 10
+                          ? `Low: ${product.stock}`
+                          : `Stock: ${product.stock}`
+                        }
+                      </p>
                     </div>
                   </div>
                 </div>
