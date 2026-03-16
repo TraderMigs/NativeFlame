@@ -22,9 +22,15 @@ export default function AdminOrders() {
 
   async function loadOrders() {
     setLoading(true)
-    const { data } = await supabase.from('orders').select('*').order('created_at', { ascending: false })
-    setOrders(data || [])
-    setLoading(false)
+    try {
+      const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false })
+      if (error) throw error
+      setOrders(data || [])
+    } catch (_) {
+      setOrders([])
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function updateStatus(orderId, status) {
