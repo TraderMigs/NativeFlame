@@ -1,32 +1,48 @@
 import React, { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { supabase, getImageUrl } from '../lib/supabase'
 import { useCart } from '../context/CartContext'
 
 export default function ProductDetail() {
-  const { id } = useParams()
+  const { id }      = useParams()
+  const navigate    = useNavigate()
   const { addItem } = useCart()
-  const [product, setProduct] = useState(null)
-  const [related, setRelated] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [product,       setProduct]       = useState(null)
+  const [related,       setRelated]       = useState([])
+  const [loading,       setLoading]       = useState(true)
   const [selectedImage, setSelectedImage] = useState(0)
-  const [quantity, setQuantity] = useState(1)
-  const [added, setAdded] = useState(false)
+  const [quantity,      setQuantity]      = useState(1)
+  const [added,         setAdded]         = useState(false)
 
   useEffect(() => {
     async function load() {
       setLoading(true)
+      setSelectedImage(0)
+      setQuantity(1)
+      setAdded(false)
+
       const { data } = await supabase.from('products').select('*').eq('id', id).single()
       setProduct(data)
 
       if (data) {
-        const { data: rel } = await supabase
-          .from('products')
-          .select('*')
+        // Prefer same collection, fall back to any active product
+        const { data: sameCol } = await supabase
+          .from('products').select('*')
           .eq('is_active', true)
+          .eq('collection', data.collection)
           .neq('id', id)
           .limit(3)
-        setRelated(rel || [])
+
+        if (sameCol && sameCol.length >= 3) {
+          setRelated(sameCol)
+        } else {
+          const { data: any } = await supabase
+            .from('products').select('*')
+            .eq('is_active', true)
+            .neq('id', id)
+            .limit(3)
+          setRelated(any || [])
+        }
       }
       setLoading(false)
     }
@@ -40,11 +56,16 @@ export default function ProductDetail() {
     setTimeout(() => setAdded(false), 2000)
   }
 
+  function handleBuyNow() {
+    addItem(product, quantity)
+    navigate('/checkout')
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen pt-20 bg-cream flex items-center justify-center">
         <div className="text-center space-y-4">
-          <div className="w-16 h-16 border-2 border-gold border-t-transparent rounded-full animate-spin mx-auto" />
+          <div className="w-16 h-16 border-2 border-gold border-t-transparent rounded-full animate-spin mx-auto"/>
           <p className="font-lora italic text-mahogany/50">Loading...</p>
         </div>
       </div>
@@ -63,10 +84,12 @@ export default function ProductDetail() {
     )
   }
 
+  const isDark = product.collection === 'Coffee House Collection'
   const images = product.images && product.images.length > 0 ? product.images : [null]
 
   return (
     <div className="min-h-screen pt-20 bg-cream">
+
       {/* Breadcrumb */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-4">
         <nav className="flex items-center gap-2 font-raleway text-xs text-mahogany/40 uppercase tracking-wider">
@@ -74,6 +97,13 @@ export default function ProductDetail() {
           <span>/</span>
           <Link to="/shop" className="hover:text-gold transition-colors">Shop</Link>
           <span>/</span>
+          {product.collection && product.collection !== 'Standard' && (
+            <>
+              <Link to={`/shop?collection=${encodeURIComponent(product.collection)}`}
+                className="hover:text-gold transition-colors">{product.collection}</Link>
+              <span>/</span>
+            </>
+          )}
           <span className="text-mahogany">{product.name}</span>
         </nav>
       </div>
@@ -84,14 +114,10 @@ export default function ProductDetail() {
 
           {/* Images */}
           <div className="space-y-4">
-            {/* Main Image */}
-            <div className={`aspect-square overflow-hidden ${product.collection === 'Premium Dark' ? 'bg-mahogany' : 'bg-parchment'}`}>
+            <div className={`aspect-square overflow-hidden ${isDark ? 'bg-mahogany' : 'bg-parchment'}`}>
               {images[selectedImage] ? (
-                <img
-                  src={getImageUrl(images[selectedImage])}
-                  alt={product.name}
-                  className="w-full h-full object-cover"
-                />
+                <img src={getImageUrl(images[selectedImage])} alt={product.name}
+                  className="w-full h-full object-cover transition-opacity duration-300"/>
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
                   <div className="text-center space-y-3">
@@ -102,22 +128,17 @@ export default function ProductDetail() {
               )}
             </div>
 
-            {/* Thumbnails */}
             {images.length > 1 && (
-              <div className="flex gap-3">
+              <div className="flex gap-3 flex-wrap">
                 {images.map((img, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setSelectedImage(i)}
+                  <button key={i} onClick={() => setSelectedImage(i)}
                     className={`w-20 h-20 overflow-hidden border-2 transition-all duration-200 ${
                       selectedImage === i ? 'border-gold' : 'border-transparent hover:border-parchment-dark'
-                    }`}
-                  >
-                    {img ? (
-                      <img src={getImageUrl(img)} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full bg-parchment flex items-center justify-center text-2xl">🕯️</div>
-                    )}
+                    }`}>
+                    {img
+                      ? <img src={getImageUrl(img)} alt="" className="w-full h-full object-cover"/>
+                      : <div className="w-full h-full bg-parchment flex items-center justify-center text-2xl">🕯️</div>
+                    }
                   </button>
                 ))}
               </div>
@@ -140,16 +161,12 @@ export default function ProductDetail() {
               </div>
             </div>
 
-            <div className="w-16 h-px bg-gold" />
+            <div className="w-16 h-px bg-gold"/>
 
-            {/* Description */}
             {product.description && (
-              <p className="font-lora text-base text-mahogany/75 leading-relaxed">
-                {product.description}
-              </p>
+              <p className="font-lora text-base text-mahogany/75 leading-relaxed">{product.description}</p>
             )}
 
-            {/* Scent Notes */}
             {product.scent_notes && (
               <div className="bg-parchment px-5 py-4">
                 <p className="font-raleway text-xs font-semibold tracking-widest uppercase text-gold mb-2">Scent Notes</p>
@@ -157,39 +174,37 @@ export default function ProductDetail() {
               </div>
             )}
 
-            {/* Quantity + Add to Cart */}
+            {/* Quantity + Actions */}
             {product.stock > 0 ? (
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
                   <span className="font-raleway text-xs uppercase tracking-wider text-mahogany/50">Quantity</span>
                   <div className="flex items-center border border-parchment-dark">
-                    <button
-                      onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                      className="w-10 h-10 flex items-center justify-center text-mahogany/60 hover:text-gold hover:bg-parchment transition-colors"
-                    >−</button>
+                    <button onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                      className="w-10 h-10 flex items-center justify-center text-mahogany/60 hover:text-gold hover:bg-parchment transition-colors">
+                      −
+                    </button>
                     <span className="w-12 text-center font-cinzel font-semibold text-mahogany">{quantity}</span>
-                    <button
-                      onClick={() => setQuantity(q => Math.min(product.stock, q + 1))}
-                      className="w-10 h-10 flex items-center justify-center text-mahogany/60 hover:text-gold hover:bg-parchment transition-colors"
-                    >+</button>
+                    <button onClick={() => setQuantity(q => Math.min(product.stock, q + 1))}
+                      className="w-10 h-10 flex items-center justify-center text-mahogany/60 hover:text-gold hover:bg-parchment transition-colors">
+                      +
+                    </button>
                   </div>
                   <span className="font-raleway text-xs text-mahogany/30">{product.stock} in stock</span>
                 </div>
 
-                <button
-                  onClick={handleAddToCart}
+                <button onClick={handleAddToCart}
                   className={`w-full py-4 font-cinzel font-bold text-sm tracking-widest uppercase transition-all duration-300 ${
-                    added
-                      ? 'bg-teal text-cream'
-                      : 'bg-mahogany text-cream hover:bg-gold'
-                  }`}
-                >
+                    added ? 'bg-teal text-cream' : 'bg-mahogany text-cream hover:bg-gold'
+                  }`}>
                   {added ? '✓ Added to Cart' : 'Add to Cart'}
                 </button>
 
-                <Link to="/checkout" className="btn-outline w-full text-center block">
+                {/* Buy Now — adds to cart then goes to checkout */}
+                <button onClick={handleBuyNow}
+                  className="btn-outline w-full text-center block">
                   Buy Now
-                </Link>
+                </button>
               </div>
             ) : (
               <div className="bg-parchment px-6 py-4 text-center">
@@ -197,13 +212,13 @@ export default function ProductDetail() {
               </div>
             )}
 
-            {/* Details */}
+            {/* Product Details */}
             <div className="border-t border-parchment-dark pt-6 space-y-3">
               {[
-                { label: 'Wax Type', val: 'Soy Blend' },
-                { label: 'Wick', val: 'Cotton, Lead-Free' },
-                { label: 'Burn Time', val: '~45–50 hours' },
-                { label: 'Made In', val: 'Buffalo Gap, Texas 🤠' },
+                { label: 'Wax Type',   val: 'Soy Blend'           },
+                { label: 'Wick',       val: 'Cotton, Lead-Free'   },
+                { label: 'Burn Time',  val: '~45–50 hours'        },
+                { label: 'Made In',    val: 'Buffalo Gap, Texas'  },
               ].map(({ label, val }) => (
                 <div key={label} className="flex justify-between items-center text-sm">
                   <span className="font-raleway text-xs uppercase tracking-wider text-mahogany/40">{label}</span>
@@ -221,17 +236,17 @@ export default function ProductDetail() {
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-10">
               <h2 className="font-cinzel text-2xl font-bold text-mahogany tracking-wide">You May Also Like</h2>
-              <div className="gold-divider" />
+              <div className="gold-divider"/>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               {related.map(p => (
                 <Link key={p.id} to={`/product/${p.id}`} className="group block card-candle bg-white">
-                  <div className="aspect-square bg-parchment overflow-hidden">
-                    {p.images && p.images[0] ? (
-                      <img src={getImageUrl(p.images[0])} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-4xl">🕯️</div>
-                    )}
+                  <div className={`aspect-square overflow-hidden ${p.collection === 'Coffee House Collection' ? 'bg-mahogany' : 'bg-parchment'}`}>
+                    {p.images && p.images[0]
+                      ? <img src={getImageUrl(p.images[0])} alt={p.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>
+                      : <div className="w-full h-full flex items-center justify-center text-4xl">🕯️</div>
+                    }
                   </div>
                   <div className="p-4 text-center">
                     <h3 className="font-cinzel font-semibold text-sm text-mahogany group-hover:text-gold transition-colors">{p.name}</h3>
@@ -243,6 +258,7 @@ export default function ProductDetail() {
           </div>
         </section>
       )}
+
     </div>
   )
 }
