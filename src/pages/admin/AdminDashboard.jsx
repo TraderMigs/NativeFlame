@@ -191,6 +191,18 @@ export default function AdminDashboard() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </Link>
+
+          <Link to="/admin/analytics"
+            className="flex items-center gap-4 bg-mahogany text-cream p-6 hover:bg-mahogany-light transition-colors group">
+            <div className="text-3xl">📊</div>
+            <div>
+              <h3 className="font-cinzel font-semibold tracking-wide group-hover:text-gold transition-colors">Analytics</h3>
+              <p className="font-raleway text-xs text-cream/50 mt-1">Revenue · Top products · Sales trends</p>
+            </div>
+            <svg className="w-5 h-5 ml-auto text-gold/40 group-hover:text-gold transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
         </div>
 
         {/* Low Stock Alert */}
