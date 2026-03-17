@@ -22,6 +22,13 @@ import AdminOrders       from './pages/admin/AdminOrders'
 import AdminSiteSettings  from './pages/admin/AdminSiteSettings'
 import AdminSubscribers  from './pages/admin/AdminSubscribers'
 import AdminDiscounts    from './pages/admin/AdminDiscounts'
+import AdminMessages    from './pages/admin/AdminMessages'
+import AdminPromos      from './pages/admin/AdminPromos'
+import AdminFAQ         from './pages/admin/AdminFAQ'
+import FAQ              from './pages/FAQ'
+import PromoBanner      from './components/PromoBanner'
+import Contact          from './pages/Contact'
+import ChatWidget       from './components/ChatWidget'
 import NotFound          from './pages/NotFound'
 
 function PublicLayout({ children }) {
@@ -30,7 +37,9 @@ function PublicLayout({ children }) {
       <Navbar />
       <main className="flex-1">{children}</main>
       <Footer />
+      <PromoBanner />
       <CartDrawer />
+      <ChatWidget />
     </div>
   )
 }
@@ -49,6 +58,8 @@ export default function App() {
             <Route path="/checkout" element={<PublicLayout><Checkout/></PublicLayout>} />
             <Route path="/about" element={<PublicLayout><About/></PublicLayout>} />
             <Route path="/order-confirmation" element={<PublicLayout><OrderConfirmation/></PublicLayout>} />
+            <Route path="/contact"           element={<PublicLayout><Contact/></PublicLayout>} />
+            <Route path="/faq"              element={<PublicLayout><FAQ/></PublicLayout>} />
 
             {/* Admin pages */}
             <Route path="/admin/login"         element={<AdminLogin/>} />
@@ -58,6 +69,9 @@ export default function App() {
             <Route path="/admin/site-settings"  element={<AdminSiteSettings/>} />
             <Route path="/admin/subscribers"   element={<AdminSubscribers/>} />
             <Route path="/admin/discounts"     element={<AdminDiscounts/>} />
+            <Route path="/admin/messages"     element={<AdminMessages/>} />
+            <Route path="/admin/promos"       element={<AdminPromos/>} />
+            <Route path="/admin/faq"          element={<AdminFAQ/>} />
             <Route path="*" element={<PublicLayout><NotFound/></PublicLayout>} />
           </Routes>
         </CartProvider>
