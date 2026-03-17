@@ -50,6 +50,7 @@ export default function AdminProducts() {
     setForm({
       name: product.name || '',
       collection: product.collection || 'Standard',
+      product_type: product.product_type || 'candle',
       description: product.description || '',
       scent_notes: product.scent_notes || '',
       price: String(product.price || ''),
@@ -109,6 +110,7 @@ export default function AdminProducts() {
     const payload = {
       name: form.name,
       collection: form.collection,
+      product_type: form.product_type || 'candle',
       description: form.description,
       scent_notes: form.scent_notes,
       price: parseFloat(form.price),
