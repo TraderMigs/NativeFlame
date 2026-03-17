@@ -24,6 +24,7 @@ import AdminSubscribers  from './pages/admin/AdminSubscribers'
 import AdminDiscounts    from './pages/admin/AdminDiscounts'
 import AdminMessages    from './pages/admin/AdminMessages'
 import AdminPromos      from './pages/admin/AdminPromos'
+import AdminAnalytics   from './pages/admin/AdminAnalytics'
 import AdminFAQ         from './pages/admin/AdminFAQ'
 import FAQ              from './pages/FAQ'
 import PromoBanner      from './components/PromoBanner'
@@ -72,6 +73,7 @@ export default function App() {
             <Route path="/admin/messages"     element={<AdminMessages/>} />
             <Route path="/admin/promos"       element={<AdminPromos/>} />
             <Route path="/admin/faq"          element={<AdminFAQ/>} />
+            <Route path="/admin/analytics"   element={<AdminAnalytics/>} />
             <Route path="*" element={<PublicLayout><NotFound/></PublicLayout>} />
           </Routes>
         </CartProvider>
