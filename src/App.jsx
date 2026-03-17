@@ -21,6 +21,7 @@ import AdminProducts     from './pages/admin/AdminProducts'
 import AdminOrders       from './pages/admin/AdminOrders'
 import AdminSiteSettings  from './pages/admin/AdminSiteSettings'
 import AdminSubscribers  from './pages/admin/AdminSubscribers'
+import AdminDiscounts    from './pages/admin/AdminDiscounts'
 import NotFound          from './pages/NotFound'
 
 function PublicLayout({ children }) {
@@ -56,6 +57,7 @@ export default function App() {
             <Route path="/admin/orders"        element={<AdminOrders/>} />
             <Route path="/admin/site-settings"  element={<AdminSiteSettings/>} />
             <Route path="/admin/subscribers"   element={<AdminSubscribers/>} />
+            <Route path="/admin/discounts"     element={<AdminDiscounts/>} />
             <Route path="*" element={<PublicLayout><NotFound/></PublicLayout>} />
           </Routes>
         </CartProvider>
