@@ -7,6 +7,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState({ products: 0, orders: 0, revenue: 0, pending: 0 })
   const [recentOrders, setRecentOrders] = useState([])
   const [lowStock,     setLowStock]     = useState([])
+  const [unreadMsgs,   setUnreadMsgs]   = useState(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -14,10 +15,11 @@ export default function AdminDashboard() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { navigate('/admin/login'); return }
 
-      const [{ count: products }, { data: orders }, { data: lowStockData }] = await Promise.all([
+      const [{ count: products }, { data: orders }, { data: lowStockData }, { count: unreadCount }] = await Promise.all([
         supabase.from('products').select('*', { count: 'exact', head: true }).eq('is_active', true),
         supabase.from('orders').select('*').order('created_at', { ascending: false }).limit(5),
-        supabase.from('products').select('id,name,stock').eq('is_active', true).lte('stock', 5).order('stock', { ascending: true })
+        supabase.from('products').select('id,name,stock').eq('is_active', true).lte('stock', 5).order('stock', { ascending: true }),
+        supabase.from('contact_messages').select('id', { count: 'exact', head: true }).eq('status', 'unread')
       ])
 
       const allOrders = orders || []
@@ -27,6 +29,7 @@ export default function AdminDashboard() {
       setStats({ products: products || 0, orders: allOrders.length, revenue, pending })
       setRecentOrders(allOrders)
       setLowStock(lowStockData || [])
+      setUnreadMsgs(unreadCount || 0)
       setLoading(false)
     }
     load()
@@ -137,6 +140,28 @@ export default function AdminDashboard() {
             <div>
               <h3 className="font-cinzel font-semibold text-mahogany tracking-wide group-hover:text-gold transition-colors">Discount Codes</h3>
               <p className="font-raleway text-xs text-mahogany/50 mt-1">Create · Assign to products · Set expiry</p>
+            </div>
+            <svg className="w-5 h-5 ml-auto text-mahogany/20 group-hover:text-gold transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
+
+          <Link to="/admin/messages"
+            className="flex items-center gap-4 bg-white border border-parchment-dark p-6 hover:border-gold transition-colors group">
+            <div className="text-3xl relative">
+              ✉️
+              {unreadMsgs > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-cream font-cinzel text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                  {unreadMsgs}
+                </span>
+              )}
+            </div>
+            <div>
+              <h3 className="font-cinzel font-semibold text-mahogany tracking-wide group-hover:text-gold transition-colors">
+                Customer Messages
+                {unreadMsgs > 0 && <span className="ml-2 text-red-500 text-xs">({unreadMsgs} new)</span>}
+              </h3>
+              <p className="font-raleway text-xs text-mahogany/50 mt-1">View · Reply · Mark status</p>
             </div>
             <svg className="w-5 h-5 ml-auto text-mahogany/20 group-hover:text-gold transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
