@@ -3,18 +3,21 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { supabase } from '../lib/supabase'
 
-const VALID_CODES = { 'WELCOME15': 0.15 }
+// Discount codes are loaded from Supabase in applyDiscount()
 
 export default function Checkout() {
   const { items, subtotal, clearCart } = useCart()
   const navigate = useNavigate()
   const [paymentMethod, setPaymentMethod] = useState('stripe')
   const [loading, setLoading] = useState(false)
-  const [discountCode,    setDiscountCode]    = useState('')
-  const [discountInput,   setDiscountInput]   = useState('')
-  const [discountPct,     setDiscountPct]     = useState(0)
-  const [discountError,   setDiscountError]   = useState('')
-  const [discountApplied, setDiscountApplied] = useState(false)
+  const [discountCode,      setDiscountCode]      = useState('')
+  const [discountInput,     setDiscountInput]     = useState('')
+  const [discountPct,       setDiscountPct]       = useState(0)
+  const [discountFlat,      setDiscountFlat]      = useState(0)
+  const [discountScope,     setDiscountScope]     = useState('site')
+  const [discountProductId, setDiscountProductId] = useState(null)
+  const [discountError,     setDiscountError]     = useState('')
+  const [discountApplied,   setDiscountApplied]   = useState(false)
   const [form, setForm] = useState({
     name: '', email: '', phone: '',
     address: '', city: '', state: 'TX', zip: '',
@@ -22,20 +25,43 @@ export default function Checkout() {
   })
   const [errors, setErrors] = useState({})
 
-  const shipping      = subtotal >= 50 ? 0 : 7.99
-  const discountAmt   = subtotal * discountPct
-  const total         = subtotal - discountAmt + shipping
+  const shipping = subtotal >= 50 ? 0 : 7.99
 
-  function applyDiscount() {
+  // Calculate discount amount based on type and scope
+  const eligibleAmt = discountScope === 'product' && discountProductId
+    ? items.filter(i => i.id === discountProductId).reduce((s, i) => s + i.price * i.quantity, 0)
+    : subtotal
+  const discountAmt = discountFlat > 0 ? Math.min(discountFlat, eligibleAmt) : eligibleAmt * discountPct
+  const total = subtotal - discountAmt + shipping
+
+  async function applyDiscount() {
     const code = discountInput.trim().toUpperCase()
-    if (VALID_CODES[code] !== undefined) {
+    if (!code) return
+    try {
+      const { data } = await supabase
+        .from('discount_codes')
+        .select('*')
+        .eq('code', code)
+        .eq('is_active', true)
+        .single()
+
+      if (!data) { setDiscountError('Invalid or inactive code.'); return }
+      if (data.expires_at && new Date(data.expires_at) < new Date()) { setDiscountError('This code has expired.'); return }
+      if (data.max_uses && data.uses >= data.max_uses) { setDiscountError('This code has reached its usage limit.'); return }
+      if (data.min_order && subtotal < data.min_order) { setDiscountError(`Minimum order $${data.min_order} required.`); return }
+
+      const pct = data.type === 'percent' ? data.amount / 100 : null
+      const flat = data.type === 'flat' ? data.amount : null
+
       setDiscountCode(code)
-      setDiscountPct(VALID_CODES[code])
+      setDiscountPct(pct || 0)
+      setDiscountFlat(flat || 0)
+      setDiscountScope(data.scope || 'site')
+      setDiscountProductId(data.product_id || null)
       setDiscountApplied(true)
       setDiscountError('')
-    } else {
-      setDiscountError('Invalid discount code.')
-      setDiscountApplied(false)
+    } catch (_) {
+      setDiscountError('Invalid or inactive code.')
     }
   }
 
@@ -43,6 +69,9 @@ export default function Checkout() {
     setDiscountCode('')
     setDiscountInput('')
     setDiscountPct(0)
+    setDiscountFlat(0)
+    setDiscountScope('site')
+    setDiscountProductId(null)
     setDiscountApplied(false)
     setDiscountError('')
   }
@@ -84,14 +113,24 @@ export default function Checkout() {
         subtotal,
         shipping,
         total,
-        discount_code:   discountCode || null,
-        discount_amount: discountAmt  || 0,
+        discount_code:      discountCode || null,
+        discount_amount:    discountAmt  || 0,
+        payment_status:     'unpaid',
+        return_status:      'none',
         payment_method:  paymentMethod,
         payment_id:      `demo_${Date.now()}`,
         status:          'confirmed'
       }).select().single()
 
       if (error) throw error
+
+      // Decrement stock for each item ordered
+      for (const item of items) {
+        await supabase.rpc('decrement_stock', {
+          product_id: item.id,
+          qty: item.quantity
+        })
+      }
 
       clearCart()
       navigate(`/order-confirmation?order=${order.id}&email=${encodeURIComponent(form.email)}`)
