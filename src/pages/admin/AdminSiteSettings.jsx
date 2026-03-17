@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useSiteSettings, DEFAULT_COLORS, DEFAULT_CONTENT } from '../../context/SiteSettingsContext'
 
 /* ── Color swatches: lighter → darker for each section's base hue ── */
@@ -106,13 +107,24 @@ export default function AdminSiteSettings() {
 
   return (
     <div className="min-h-screen bg-cream">
+
+      {/* Header — matches all other admin pages */}
+      <header className="bg-mahogany border-b border-cream/10 px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Link to="/admin" className="font-raleway text-xs text-cream/40 hover:text-gold transition-colors uppercase tracking-wider">
+            ← Dashboard
+          </Link>
+          <span className="text-cream/20">/</span>
+          <h1 className="font-cinzel font-bold text-gold tracking-wider">Site Appearance</h1>
+        </div>
+      </header>
+
       <div className="max-w-5xl mx-auto px-4 py-8">
 
-        {/* Header */}
+        {/* Sub-header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="font-cinzel text-2xl font-bold text-mahogany">Site Appearance</h1>
-            <p className="font-lora text-sm text-mahogany/50 mt-1 italic">
+            <p className="font-lora text-sm text-mahogany/50 italic">
               Change colors and text across the entire site. Changes apply live.
             </p>
           </div>
