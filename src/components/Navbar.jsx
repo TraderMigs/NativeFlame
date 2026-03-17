@@ -81,10 +81,10 @@ export default function Navbar() {
             <Link to="/about" className={`nav-link transition-colors duration-300 ${isLight ? '' : 'text-cream hover:text-gold-pale'}`}>
               Our Story
             </Link>
-            <a href="mailto:nativeflamecandles@gmail.com"
+            <Link to="/contact"
               className={`nav-link transition-colors duration-300 ${isLight ? '' : 'text-cream hover:text-gold-pale'}`}>
               Contact
-            </a>
+            </Link>
           </div>
 
           {/* ── CART + MOBILE TOGGLE ── */}
@@ -123,7 +123,7 @@ export default function Navbar() {
                 </Link>
               ))}
               <Link to="/about" className="nav-link py-3 px-2 border-b border-parchment/50 mt-2">Our Story</Link>
-              <a href="mailto:nativeflamecandles@gmail.com" className="nav-link py-3 px-2">Contact Jennifer</a>
+              <Link to="/contact" className="nav-link py-3 px-2">Contact Jennifer</Link>
             </div>
           </div>
         )}
