@@ -59,6 +59,14 @@ export default function Footer() {
                 className="font-raleway text-sm text-cream/70 hover:text-gold transition-colors duration-200">
                 Our Story
               </Link>
+              <Link to="/faq"
+                className="font-raleway text-sm text-cream/70 hover:text-gold transition-colors duration-200">
+                FAQ
+              </Link>
+              <Link to="/contact"
+                className="font-raleway text-sm text-cream/70 hover:text-gold transition-colors duration-200">
+                Contact
+              </Link>
               <Link to="/cart"
                 className="font-raleway text-sm text-cream/70 hover:text-gold transition-colors duration-200">
                 Shopping Cart
