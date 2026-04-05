@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase, getImageUrl } from '../../lib/supabase'
 
+// Product types loaded from Supabase
 const EMPTY_FORM = {
   name: '', collection: 'Standard', product_type: 'candle', description: '', scent_notes: '',
   price: '', size_oz: '7', stock: '', is_active: true
@@ -19,16 +20,22 @@ export default function AdminProducts() {
   const [pendingImages, setPendingImages] = useState([]) // File objects
   const [previewUrls, setPreviewUrls] = useState([])
   const [existingImages, setExistingImages] = useState([])
-  const [deleteConfirm, setDeleteConfirm] = useState(null)
+  const [deleteConfirm,   setDeleteConfirm]   = useState(null)
+  const [productTypes,    setProductTypes]    = useState([])
 
   useEffect(() => {
     async function check() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { navigate('/admin/login'); return }
-      loadProducts()
+      await Promise.all([loadProducts(), loadProductTypes()])
     }
     check()
   }, [navigate])
+
+  async function loadProductTypes() {
+    const { data } = await supabase.from('product_types').select('*').eq('is_active', true).order('sort_order', { ascending: true })
+    setProductTypes(data || [])
+  }
 
   async function loadProducts() {
     setLoading(true)
@@ -204,10 +211,9 @@ export default function AdminProducts() {
                   <div>
                     <label className="font-raleway text-xs uppercase tracking-wider text-mahogany/50 block mb-1">Product Type</label>
                     <select value={form.product_type} onChange={e => setForm(p => ({...p, product_type: e.target.value}))} className="input-field">
-                      <option value="candle">🕯️ Candle</option>
-                      <option value="wax_melt">🫧 Wax Melt</option>
-                      <option value="room_spray">🌿 Room Spray</option>
-                      <option value="car_freshener">🚗 Car Freshener</option>
+                      {productTypes.map(t => (
+                        <option key={t.slug} value={t.slug}>{t.icon} {t.label}</option>
+                      ))}
                     </select>
                   </div>
                 </div>
