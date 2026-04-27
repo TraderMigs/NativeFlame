@@ -33,10 +33,18 @@ export const DEFAULT_CONTENT = {
   testimonial_by:    '— Happy Customer',
 }
 
+export const DEFAULT_SHIPPING = {
+  shipping_mode:       'flat',   // 'flat' | 'threshold' | 'free'
+  shipping_flat_rate:  '7.99',
+  shipping_threshold:  '50',
+  shipping_free_label: 'Free Shipping on orders over $50',
+}
+
 export function SiteSettingsProvider({ children }) {
-  const [colors,  setColors]  = useState(DEFAULT_COLORS)
-  const [content, setContent] = useState(DEFAULT_CONTENT)
-  const [loaded,  setLoaded]  = useState(false)
+  const [colors,    setColors]    = useState(DEFAULT_COLORS)
+  const [content,   setContent]   = useState(DEFAULT_CONTENT)
+  const [shipping,  setShipping]  = useState(DEFAULT_SHIPPING)
+  const [loaded,    setLoaded]    = useState(false)
 
   const load = useCallback(async () => {
     try {
@@ -44,11 +52,13 @@ export function SiteSettingsProvider({ children }) {
       if (data?.length) {
         const c = { ...DEFAULT_COLORS }
         const t = { ...DEFAULT_CONTENT }
+        const s = { ...DEFAULT_SHIPPING }
         data.forEach(({ key, value }) => {
-          if (key in DEFAULT_COLORS)  c[key] = value
-          if (key in DEFAULT_CONTENT) t[key] = value
+          if (key in DEFAULT_COLORS)   c[key] = value
+          if (key in DEFAULT_CONTENT)  t[key] = value
+          if (key in DEFAULT_SHIPPING) s[key] = value
         })
-        setColors(c); setContent(t)
+        setColors(c); setContent(t); setShipping(s)
       }
     } catch (_) {}
     setLoaded(true)
@@ -71,6 +81,14 @@ export function SiteSettingsProvider({ children }) {
     setColors(next)
   }
 
+  async function saveShipping(next) {
+    await supabase.from('site_settings').upsert(
+      Object.entries(next).map(([key,value]) => ({ key, value })),
+      { onConflict: 'key' }
+    )
+    setShipping(next)
+  }
+
   async function saveContent(next) {
     await supabase.from('site_settings').upsert(
       Object.entries(next).map(([key,value]) => ({ key, value })),
@@ -80,7 +98,7 @@ export function SiteSettingsProvider({ children }) {
   }
 
   return (
-    <Ctx.Provider value={{ colors, content, loaded, setColors, setContent, saveColors, saveContent, reload: load }}>
+    <Ctx.Provider value={{ colors, content, shipping, loaded, setColors, setContent, setShipping, saveColors, saveContent, saveShipping, reload: load }}>
       {children}
     </Ctx.Provider>
   )
