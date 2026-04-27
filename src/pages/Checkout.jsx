@@ -1,15 +1,34 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { loadStripe } from '@stripe/stripe-js'
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { useCart } from '../context/CartContext'
 import { supabase } from '../lib/supabase'
 
-// Discount codes are loaded from Supabase in applyDiscount()
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
 
-export default function Checkout() {
+const CARD_STYLE = {
+  style: {
+    base: {
+      fontFamily: '"Lora", serif',
+      fontSize: '15px',
+      color: '#1C0A00',
+      '::placeholder': { color: '#1C0A0060' },
+    },
+    invalid: { color: '#DC2626' },
+  },
+}
+
+// ── Inner form — needs Stripe context ──────────────────────────────
+function CheckoutForm() {
+  const stripe     = useStripe()
+  const elements   = useElements()
   const { items, subtotal, clearCart } = useCart()
-  const navigate = useNavigate()
-  const [paymentMethod, setPaymentMethod] = useState('stripe')
-  const [loading, setLoading] = useState(false)
+  const navigate   = useNavigate()
+
+  const [paymentMethod,     setPaymentMethod]     = useState('stripe')
+  const [loading,           setLoading]           = useState(false)
+  const [cardError,         setCardError]         = useState('')
   const [discountCode,      setDiscountCode]      = useState('')
   const [discountInput,     setDiscountInput]     = useState('')
   const [discountPct,       setDiscountPct]       = useState(0)
@@ -21,125 +40,145 @@ export default function Checkout() {
   const [form, setForm] = useState({
     name: '', email: '', phone: '',
     address: '', city: '', state: 'TX', zip: '',
-    cardNumber: '', cardExpiry: '', cardCvc: ''
   })
   const [errors, setErrors] = useState({})
 
   const shipping = subtotal >= 50 ? 0 : 7.99
-
-  // Calculate discount amount based on type and scope
   const eligibleAmt = discountScope === 'product' && discountProductId
     ? items.filter(i => i.id === discountProductId).reduce((s, i) => s + i.price * i.quantity, 0)
     : subtotal
   const discountAmt = discountFlat > 0 ? Math.min(discountFlat, eligibleAmt) : eligibleAmt * discountPct
-  const total = subtotal - discountAmt + shipping
+  const total       = subtotal - discountAmt + shipping
+  const totalCents  = Math.round(total * 100)
 
   async function applyDiscount() {
     const code = discountInput.trim().toUpperCase()
     if (!code) return
     try {
-      const { data } = await supabase
-        .from('discount_codes')
-        .select('*')
-        .eq('code', code)
-        .eq('is_active', true)
-        .single()
-
-      if (!data) { setDiscountError('Invalid or inactive code.'); return }
+      const { data } = await supabase.from('discount_codes').select('*')
+        .eq('code', code).eq('is_active', true).single()
+      if (!data)                                    { setDiscountError('Invalid or inactive code.'); return }
       if (data.expires_at && new Date(data.expires_at) < new Date()) { setDiscountError('This code has expired.'); return }
       if (data.max_uses && data.uses >= data.max_uses) { setDiscountError('This code has reached its usage limit.'); return }
       if (data.min_order && subtotal < data.min_order) { setDiscountError(`Minimum order $${data.min_order} required.`); return }
-
-      const pct = data.type === 'percent' ? data.amount / 100 : null
-      const flat = data.type === 'flat' ? data.amount : null
-
       setDiscountCode(code)
-      setDiscountPct(pct || 0)
-      setDiscountFlat(flat || 0)
+      setDiscountPct(data.type === 'percent' ? data.amount / 100 : 0)
+      setDiscountFlat(data.type === 'flat' ? data.amount : 0)
       setDiscountScope(data.scope || 'site')
       setDiscountProductId(data.product_id || null)
       setDiscountApplied(true)
       setDiscountError('')
-    } catch (_) {
-      setDiscountError('Invalid or inactive code.')
-    }
+    } catch (_) { setDiscountError('Invalid or inactive code.') }
   }
 
   function removeDiscount() {
-    setDiscountCode('')
-    setDiscountInput('')
-    setDiscountPct(0)
-    setDiscountFlat(0)
-    setDiscountScope('site')
-    setDiscountProductId(null)
-    setDiscountApplied(false)
-    setDiscountError('')
+    setDiscountCode(''); setDiscountInput(''); setDiscountPct(0)
+    setDiscountFlat(0); setDiscountScope('site'); setDiscountProductId(null)
+    setDiscountApplied(false); setDiscountError('')
   }
 
   function handleChange(e) {
     const { name, value } = e.target
-    setForm(prev => ({ ...prev, [name]: value }))
-    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }))
+    setForm(p => ({ ...p, [name]: value }))
+    if (errors[name]) setErrors(p => ({ ...p, [name]: '' }))
   }
 
   function validate() {
-    const errs = {}
-    if (!form.name.trim())    errs.name    = 'Required'
-    if (!form.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) errs.email = 'Valid email required'
-    if (!form.address.trim()) errs.address = 'Required'
-    if (!form.city.trim())    errs.city    = 'Required'
-    if (!form.zip.match(/^\d{5}/)) errs.zip = 'Valid ZIP required'
-    if (paymentMethod === 'stripe') {
-      if (!form.cardNumber.replace(/\s/g,'').match(/^\d{16}$/)) errs.cardNumber = 'Valid card number required'
-      if (!form.cardExpiry.match(/^\d{2}\/\d{2}$/))             errs.cardExpiry = 'MM/YY format'
-      if (!form.cardCvc.match(/^\d{3,4}$/))                     errs.cardCvc    = 'Invalid CVC'
-    }
-    return errs
+    const e = {}
+    if (!form.name.trim())    e.name    = 'Required'
+    if (!form.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) e.email = 'Valid email required'
+    if (!form.address.trim()) e.address = 'Required'
+    if (!form.city.trim())    e.city    = 'Required'
+    if (!form.zip.match(/^\d{5}/)) e.zip = 'Valid ZIP required'
+    return e
   }
 
   async function handleSubmit(e) {
     e.preventDefault()
+    setCardError('')
     const errs = validate()
-    if (Object.keys(errs).length > 0) { setErrors(errs); return }
-
+    if (Object.keys(errs).length) { setErrors(errs); return }
     setLoading(true)
+
     try {
-      const { data: order, error } = await supabase.from('orders').insert({
-        customer_name:    form.name,
-        customer_email:   form.email,
-        customer_phone:   form.phone,
-        shipping_address: { address: form.address, city: form.city, state: form.state, zip: form.zip },
-        items: items.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity, size_oz: i.size_oz })),
-        subtotal,
-        shipping,
-        total,
-        discount_code:      discountCode || null,
-        discount_amount:    discountAmt  || 0,
-        payment_status:     'unpaid',
-        return_status:      'none',
-        payment_method:  paymentMethod,
-        payment_id:      `demo_${Date.now()}`,
-        status:          'confirmed'
-      }).select().single()
+      if (paymentMethod === 'stripe') {
+        if (!stripe || !elements) { setCardError('Stripe not loaded. Please refresh.'); setLoading(false); return }
 
-      if (error) throw error
-
-      // Decrement stock for each item ordered
-      for (const item of items) {
-        await supabase.rpc('decrement_stock', {
-          product_id: item.id,
-          qty: item.quantity
+        // 1. Create PaymentIntent on server
+        const piRes = await fetch('/api/create-payment-intent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: totalCents,
+            metadata: { customer_email: form.email, customer_name: form.name }
+          })
         })
-      }
+        const piData = await piRes.json()
+        if (!piRes.ok || !piData.clientSecret) throw new Error(piData.error || 'Payment setup failed')
 
-      clearCart()
-      navigate(`/order-confirmation?order=${order.id}&email=${encodeURIComponent(form.email)}`)
+        // 2. Confirm card payment with Stripe
+        const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(piData.clientSecret, {
+          payment_method: {
+            card: elements.getElement(CardElement),
+            billing_details: {
+              name:  form.name,
+              email: form.email,
+              address: {
+                line1:       form.address,
+                city:        form.city,
+                state:       form.state,
+                postal_code: form.zip,
+                country:     'US',
+              }
+            }
+          }
+        })
+
+        if (stripeError) { setCardError(stripeError.message); setLoading(false); return }
+        if (paymentIntent.status !== 'succeeded') { setCardError('Payment was not completed. Please try again.'); setLoading(false); return }
+
+        // 3. Save confirmed order to Supabase
+        await saveOrder(piData.paymentIntentId, 'paid')
+
+      } else {
+        // PayPal — save as pending, redirect handled separately
+        await saveOrder('paypal_pending', 'unpaid')
+      }
     } catch (err) {
       console.error(err)
-      alert('Something went wrong. Please try again.')
-    } finally {
+      setCardError(err.message || 'Something went wrong. Please try again.')
       setLoading(false)
     }
+  }
+
+  async function saveOrder(paymentId, paymentStatus) {
+    const { data: order, error } = await supabase.from('orders').insert({
+      customer_name:    form.name,
+      customer_email:   form.email,
+      customer_phone:   form.phone || null,
+      shipping_address: { address: form.address, city: form.city, state: form.state, zip: form.zip },
+      items:            items.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity, size_oz: i.size_oz })),
+      subtotal,
+      shipping,
+      total,
+      discount_code:    discountCode || null,
+      discount_amount:  discountAmt  || 0,
+      payment_method:   paymentMethod,
+      payment_id:       paymentId,
+      payment_status:   paymentStatus,
+      return_status:    'none',
+      status:           'confirmed',
+    }).select().single()
+
+    if (error) throw error
+
+    // Decrement stock
+    for (const item of items) {
+      await supabase.rpc('decrement_stock', { product_id: item.id, qty: item.quantity })
+    }
+
+    clearCart()
+    navigate(`/order-confirmation?order=${order.id}&email=${encodeURIComponent(form.email)}`)
   }
 
   if (items.length === 0) {
@@ -232,7 +271,9 @@ export default function Checkout() {
                   <div className="flex items-center justify-between bg-teal/10 border border-teal/30 px-4 py-3">
                     <div>
                       <span className="font-cinzel text-sm font-bold text-teal-dark tracking-widest">{discountCode}</span>
-                      <span className="font-raleway text-xs text-teal-dark ml-2">— {Math.round(discountPct * 100)}% off applied</span>
+                      <span className="font-raleway text-xs text-teal-dark ml-2">
+                        {discountFlat > 0 ? `$${discountFlat} off applied` : `${Math.round(discountPct * 100)}% off applied`}
+                      </span>
                     </div>
                     <button type="button" onClick={removeDiscount}
                       className="font-raleway text-xs text-mahogany/40 hover:text-red-500 transition-colors underline">
@@ -241,18 +282,11 @@ export default function Checkout() {
                   </div>
                 ) : (
                   <div className="flex gap-3">
-                    <input
-                      type="text"
-                      value={discountInput}
+                    <input type="text" value={discountInput}
                       onChange={e => { setDiscountInput(e.target.value.toUpperCase()); setDiscountError('') }}
-                      placeholder="Enter code (e.g. WELCOME15)"
-                      className="input-field flex-1 uppercase"
-                      onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), applyDiscount())}
-                    />
-                    <button type="button" onClick={applyDiscount}
-                      className="btn-outline px-5 text-xs shrink-0">
-                      Apply
-                    </button>
+                      placeholder="Enter code (e.g. WELCOME15)" className="input-field flex-1 uppercase"
+                      onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), applyDiscount())}/>
+                    <button type="button" onClick={applyDiscount} className="btn-outline px-5 text-xs shrink-0">Apply</button>
                   </div>
                 )}
                 {discountError && <p className="font-raleway text-xs text-red-500">{discountError}</p>}
@@ -275,41 +309,26 @@ export default function Checkout() {
                   </button>
                 </div>
 
+                {/* Stripe Card Element — real, secure, PCI compliant */}
                 {paymentMethod === 'stripe' && (
-                  <div className="space-y-4 mt-4 p-5 bg-parchment">
-                    <div>
-                      <label className="font-raleway text-xs uppercase tracking-wider text-mahogany/50 block mb-1">Card Number *</label>
-                      <input name="cardNumber" value={form.cardNumber} onChange={handleChange}
-                        className={`input-field ${errors.cardNumber ? 'border-red-400' : ''}`}
-                        placeholder="1234 5678 9012 3456" maxLength={19}/>
-                      {errors.cardNumber && <p className="text-red-500 text-xs mt-1">{errors.cardNumber}</p>}
+                  <div className="space-y-3 mt-4 p-5 bg-parchment">
+                    <label className="font-raleway text-xs uppercase tracking-wider text-mahogany/50 block">Card Details *</label>
+                    <div className="border border-parchment-dark bg-cream px-4 py-3 focus-within:border-gold transition-colors">
+                      <CardElement options={CARD_STYLE} onChange={() => setCardError('')}/>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="font-raleway text-xs uppercase tracking-wider text-mahogany/50 block mb-1">Expiry *</label>
-                        <input name="cardExpiry" value={form.cardExpiry} onChange={handleChange}
-                          className={`input-field ${errors.cardExpiry ? 'border-red-400' : ''}`}
-                          placeholder="MM/YY" maxLength={5}/>
-                        {errors.cardExpiry && <p className="text-red-500 text-xs mt-1">{errors.cardExpiry}</p>}
-                      </div>
-                      <div>
-                        <label className="font-raleway text-xs uppercase tracking-wider text-mahogany/50 block mb-1">CVC *</label>
-                        <input name="cardCvc" value={form.cardCvc} onChange={handleChange}
-                          className={`input-field ${errors.cardCvc ? 'border-red-400' : ''}`}
-                          placeholder="123" maxLength={4}/>
-                        {errors.cardCvc && <p className="text-red-500 text-xs mt-1">{errors.cardCvc}</p>}
-                      </div>
-                    </div>
-                    <p className="font-raleway text-xs text-mahogany/30 italic">🔒 Card processing activates when Stripe goes live</p>
+                    {cardError && <p className="font-raleway text-xs text-red-500">{cardError}</p>}
+                    <p className="font-raleway text-xs text-mahogany/30 flex items-center gap-1">
+                      🔒 Secured by Stripe · Card details never touch our server
+                    </p>
                   </div>
                 )}
 
                 {paymentMethod === 'paypal' && (
-                  <div className="p-5 bg-parchment text-center">
-                    <p className="font-lora text-sm italic text-mahogany/60 mb-2">
+                  <div className="p-5 bg-parchment text-center space-y-2">
+                    <p className="font-lora text-sm italic text-mahogany/60">
                       You'll be redirected to PayPal to complete your purchase securely.
                     </p>
-                    <p className="font-raleway text-xs text-mahogany/30 italic">🔒 PayPal integration activates at launch</p>
+                    <p className="font-raleway text-xs text-mahogany/30">🔒 PayPal integration coming soon</p>
                   </div>
                 )}
               </div>
@@ -320,7 +339,6 @@ export default function Checkout() {
               <div className="bg-parchment p-6 sticky top-24 space-y-4">
                 <h2 className="font-cinzel font-bold text-base text-mahogany">Order Summary</h2>
                 <div className="w-10 h-px bg-gold"/>
-
                 <div className="space-y-3 max-h-48 overflow-y-auto">
                   {items.map(item => (
                     <div key={item.id} className="flex justify-between text-xs">
@@ -329,7 +347,6 @@ export default function Checkout() {
                     </div>
                   ))}
                 </div>
-
                 <div className="border-t border-parchment-dark pt-3 space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="font-raleway text-mahogany/60">Subtotal</span>
@@ -337,7 +354,7 @@ export default function Checkout() {
                   </div>
                   {discountApplied && (
                     <div className="flex justify-between text-teal-dark">
-                      <span className="font-raleway text-xs">{discountCode} ({Math.round(discountPct * 100)}% off)</span>
+                      <span className="font-raleway text-xs">{discountCode}</span>
                       <span className="font-cinzel text-xs">−${discountAmt.toFixed(2)}</span>
                     </div>
                   )}
@@ -352,14 +369,12 @@ export default function Checkout() {
                     <span className="font-cinzel font-bold text-xl text-gold">${total.toFixed(2)}</span>
                   </div>
                 </div>
-
-                <button type="submit" disabled={loading}
-                  className={`btn-gold w-full flex items-center justify-center gap-2 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}>
+                <button type="submit" disabled={loading || !stripe}
+                  className={`btn-gold w-full flex items-center justify-center gap-2 ${(loading || !stripe) ? 'opacity-70 cursor-not-allowed' : ''}`}>
                   {loading ? (
                     <><div className="w-4 h-4 border-2 border-cream border-t-transparent rounded-full animate-spin"/>Processing...</>
-                  ) : `Place Order · $${total.toFixed(2)}`}
+                  ) : `Pay $${total.toFixed(2)}`}
                 </button>
-
                 <p className="text-center font-raleway text-xs text-mahogany/30">
                   🔒 Secure checkout · SSL encrypted
                 </p>
@@ -369,5 +384,14 @@ export default function Checkout() {
         </form>
       </div>
     </div>
+  )
+}
+
+// ── Outer wrapper — provides Stripe context ────────────────────────
+export default function Checkout() {
+  return (
+    <Elements stripe={stripePromise}>
+      <CheckoutForm/>
+    </Elements>
   )
 }
