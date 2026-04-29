@@ -22,6 +22,7 @@ export default function AdminProducts() {
   const [existingImages, setExistingImages] = useState([])
   const [deleteConfirm,   setDeleteConfirm]   = useState(null)
   const [productTypes,    setProductTypes]    = useState([])
+  const [collections,     setCollections]     = useState([])
 
   useEffect(() => {
     async function check() {
@@ -33,8 +34,12 @@ export default function AdminProducts() {
   }, [navigate])
 
   async function loadProductTypes() {
-    const { data } = await supabase.from('product_types').select('*').eq('is_active', true).order('sort_order', { ascending: true })
-    setProductTypes(data || [])
+    const [{ data: types }, { data: cols }] = await Promise.all([
+      supabase.from('product_types').select('*').eq('is_active', true).order('sort_order', { ascending: true }),
+      supabase.from('collections').select('*').eq('is_active', true).order('sort_order', { ascending: true }),
+    ])
+    setProductTypes(types || [])
+    setCollections(cols || [])
   }
 
   async function loadProducts() {
@@ -201,9 +206,9 @@ export default function AdminProducts() {
                   <div>
                     <label className="font-raleway text-xs uppercase tracking-wider text-mahogany/50 block mb-1">Collection</label>
                     <select value={form.collection} onChange={e => setForm(p => ({...p, collection: e.target.value}))} className="input-field">
-                      <option>Standard</option>
-                      <option>Turnbow Collection</option>
-                      <option>Coffee House Collection</option>
+                      {collections.map(c => (
+                        <option key={c.id} value={c.name}>{c.name}</option>
+                      ))}
                     </select>
                   </div>
                 </div>
