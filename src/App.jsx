@@ -28,6 +28,7 @@ import AdminAnalytics   from './pages/admin/AdminAnalytics'
 import AdminFAQ             from './pages/admin/AdminFAQ'
 import AdminProductTypes    from './pages/admin/AdminProductTypes'
 import AdminShipping        from './pages/admin/AdminShipping'
+import AdminCollections     from './pages/admin/AdminCollections'
 import FAQ              from './pages/FAQ'
 import PromoBanner      from './components/PromoBanner'
 import Contact          from './pages/Contact'
@@ -78,6 +79,7 @@ export default function App() {
             <Route path="/admin/analytics"      element={<AdminAnalytics/>} />
             <Route path="/admin/product-types"  element={<AdminProductTypes/>} />
             <Route path="/admin/shipping"       element={<AdminShipping/>} />
+            <Route path="/admin/collections"    element={<AdminCollections/>} />
             <Route path="*" element={<PublicLayout><NotFound/></PublicLayout>} />
           </Routes>
         </CartProvider>
