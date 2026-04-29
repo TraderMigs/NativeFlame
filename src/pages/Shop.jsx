@@ -5,8 +5,9 @@ import ProductCard from '../components/ProductCard'
 
 export default function Shop() {
   const [products,     setProducts]     = useState([])
-  const [productTypes, setProductTypes] = useState([])
-  const [loading,      setLoading]      = useState(true)
+  const [productTypes,  setProductTypes]  = useState([])
+  const [collections,   setCollections]   = useState([])
+  const [loading,       setLoading]       = useState(true)
   const [typesLoading, setTypesLoading] = useState(true)
   const [fetchError,   setFetchError]   = useState(false)
   const [searchParams, setSearchParams] = useSearchParams()
@@ -15,19 +16,19 @@ export default function Shop() {
   const activeCollection = searchParams.get('collection') || 'All'
   const sortBy           = searchParams.get('sort')       || 'newest'
 
-  const COLLECTIONS = ['All', 'Standard', 'Turnbow Collection', 'Coffee House Collection']
+  // Collections loaded from Supabase — 'All' always prepended
 
-  // Load product types from Supabase
+  // Load product types and collections from Supabase
   useEffect(() => {
     async function loadTypes() {
       setTypesLoading(true)
       try {
-        const { data } = await supabase
-          .from('product_types')
-          .select('*')
-          .eq('is_active', true)
-          .order('sort_order', { ascending: true })
-        setProductTypes(data || [])
+        const [{ data: types }, { data: cols }] = await Promise.all([
+          supabase.from('product_types').select('*').eq('is_active', true).order('sort_order', { ascending: true }),
+          supabase.from('collections').select('*').eq('is_active', true).order('sort_order', { ascending: true }),
+        ])
+        setProductTypes(types || [])
+        setCollections(cols || [])
       } catch (_) {}
       setTypesLoading(false)
     }
@@ -147,14 +148,23 @@ export default function Shop() {
         {/* Filters Bar */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6 pb-6 border-b border-parchment-dark">
           <div className="flex flex-wrap items-center gap-2">
-            {COLLECTIONS.map(col => (
-              <button key={col} onClick={() => setCollection(col)}
+            {/* All button always first */}
+            <button onClick={() => setCollection('All')}
+              className={`font-raleway text-xs font-semibold tracking-widest uppercase px-4 py-2 transition-all duration-200 ${
+                activeCollection === 'All'
+                  ? 'bg-mahogany text-cream'
+                  : 'border border-parchment-dark text-mahogany/60 hover:border-mahogany hover:text-mahogany'
+              }`}>
+              All
+            </button>
+            {collections.map(col => (
+              <button key={col.name} onClick={() => setCollection(col.name)}
                 className={`font-raleway text-xs font-semibold tracking-widest uppercase px-4 py-2 transition-all duration-200 ${
-                  activeCollection === col
+                  activeCollection === col.name
                     ? 'bg-mahogany text-cream'
                     : 'border border-parchment-dark text-mahogany/60 hover:border-mahogany hover:text-mahogany'
                 }`}>
-                {col}
+                {col.name}
               </button>
             ))}
             {hasActiveFilters && (
@@ -192,6 +202,7 @@ export default function Shop() {
                 <button onClick={() => setCollection('All')} className="ml-1 hover:text-red-500 transition-colors">×</button>
               </span>
             )}
+            {/* legacy: handle dark/natural URL params mapped to collection names */}
           </div>
         )}
 
