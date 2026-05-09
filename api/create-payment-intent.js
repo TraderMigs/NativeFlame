@@ -1,6 +1,6 @@
-const Stripe = require('stripe')
+import Stripe from 'stripe'
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
@@ -15,13 +15,16 @@ module.exports = async function handler(req, res) {
     }
 
     const paymentIntent = await stripe.paymentIntents.create({
-      amount:   Math.round(amount), // amount in cents
+      amount:   Math.round(amount),
       currency,
       metadata,
       automatic_payment_methods: { enabled: true },
     })
 
-    res.status(200).json({ clientSecret: paymentIntent.client_secret, paymentIntentId: paymentIntent.id })
+    res.status(200).json({
+      clientSecret:    paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id,
+    })
   } catch (err) {
     console.error('Stripe error:', err)
     res.status(500).json({ error: err.message })
