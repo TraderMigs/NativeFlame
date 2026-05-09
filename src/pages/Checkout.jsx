@@ -164,7 +164,11 @@ function CheckoutForm() {
   }
 
   async function saveOrder(paymentId, paymentStatus) {
-    const { data: order, error } = await supabase.from('orders').insert({
+    // Generate UUID client-side — no .select() needed, avoids anon SELECT RLS
+    const orderId = crypto.randomUUID()
+
+    const { error } = await supabase.from('orders').insert({
+      id:               orderId,
       customer_name:    form.name,
       customer_email:   form.email,
       customer_phone:   form.phone || null,
@@ -180,7 +184,7 @@ function CheckoutForm() {
       payment_status:   paymentStatus,
       return_status:    'none',
       status:           'confirmed',
-    }).select().single()
+    })
 
     if (error) throw error
 
@@ -190,7 +194,7 @@ function CheckoutForm() {
     }
 
     clearCart()
-    navigate(`/order-confirmation?order=${order.id}&email=${encodeURIComponent(form.email)}`)
+    navigate(`/order-confirmation?order=${orderId}&email=${encodeURIComponent(form.email)}`)
   }
 
   if (items.length === 0) {
