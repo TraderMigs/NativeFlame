@@ -5,7 +5,7 @@ import { supabase, getImageUrl } from '../../lib/supabase'
 // Product types loaded from Supabase
 // ── Variants Editor Sub-Component ──────────────────────────────────
 function VariantsEditor({ productId, variants, setVariants }) {
-  const EMPTY_VAR = { color_style: '', size: '', price: '', stock: '' }
+  const EMPTY_VAR = { color_style: '', size: '', price: '', stock: '0' }
   const [newVar,   setNewVar]   = useState(EMPTY_VAR)
   const [saving,   setSaving]   = useState(false)
   const [editVar,  setEditVar]  = useState(null) // id being edited inline
@@ -114,7 +114,7 @@ function VariantsEditor({ productId, variants, setVariants }) {
               className="input-field text-sm" placeholder="10"/>
           </div>
         </div>
-        <button type="button" onClick={addVariant} disabled={saving || !newVar.color_style || !newVar.size || !newVar.price || newVar.stock === ''}
+        <button type="button" onClick={addVariant} disabled={saving || !newVar.color_style.trim() || !newVar.size.trim() || !newVar.price}
           className="btn-outline text-xs px-4 py-2 flex items-center gap-2 disabled:opacity-40">
           {saving ? <><div className="w-3 h-3 border border-mahogany border-t-transparent rounded-full animate-spin"/>Adding...</> : '+ Add Variant'}
         </button>
