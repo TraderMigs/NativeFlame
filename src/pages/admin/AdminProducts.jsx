@@ -4,7 +4,7 @@ import { supabase, getImageUrl } from '../../lib/supabase'
 
 // Product types loaded from Supabase
 // ── Variants Editor Sub-Component ──────────────────────────────────
-function VariantsEditor({ productId, variants, setVariants }) {
+function VariantsEditor({ productId, variants, setVariants, variantsRef }) {
   const EMPTY_VAR = { color_style: '', size: '', price: '', stock: '0' }
   const [newVar,   setNewVar]   = useState(EMPTY_VAR)
   const [saving,   setSaving]   = useState(false)
@@ -255,9 +255,9 @@ export default function AdminProducts() {
 
   async function handleSave(e) {
     e.preventDefault()
-    const isVariantProd = form.product_type && form.product_type.includes('tshirt')
-    if (!form.name || !form.price || (!isVariantProd && !form.stock)) {
-      alert('Name and price are required.' + (!isVariantProd ? ' Stock is also required.' : ''))
+    const isVariantProduct = form.product_type && form.product_type.includes('tshirt')
+    if (!form.name || !form.price || (!isVariantProduct && !form.stock)) {
+      alert('Name and price are required.' + (!isVariantProduct ? ' Stock is also required.' : ''))
       return
     }
     setSaving(true)
@@ -265,7 +265,6 @@ export default function AdminProducts() {
     const productId = editId || crypto.randomUUID()
     const allImages = await uploadImages(productId)
 
-    const isVariantProduct = form.product_type && form.product_type.includes('tshirt')
     const payload = {
       name: form.name,
       collection: form.collection,
@@ -424,6 +423,7 @@ export default function AdminProducts() {
                     productId={editProductId}
                     variants={variants}
                     setVariants={setVariants}
+                    variantsRef={variantsRef}
                   />
                 )}
 
