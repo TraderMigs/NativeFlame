@@ -173,7 +173,7 @@ function CheckoutForm() {
       customer_email:   form.email,
       customer_phone:   form.phone || null,
       shipping_address: { address: form.address, city: form.city, state: form.state, zip: form.zip },
-      items:            items.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity, size_oz: i.size_oz })),
+      items:            items.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity, size_oz: i.size_oz, variant_id: i.variantId || null, variant_color: i.variantColor || null, variant_size: i.variantSize || null })),
       subtotal,
       shipping,
       total,
