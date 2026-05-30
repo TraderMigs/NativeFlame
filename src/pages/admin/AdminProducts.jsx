@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase, getImageUrl } from '../../lib/supabase'
 
@@ -24,7 +24,7 @@ function VariantsEditor({ productId, variants, setVariants }) {
       is_active:   true,
     }
     if (productId) {
-      // Save directly to DB — productId is always set now (pre-generated in openNew)
+      // Editing existing product — save directly to DB
       const { data, error } = await supabase.from('product_variants')
         .insert({ ...payload, product_id: productId }).select().single()
       if (error) {
@@ -33,7 +33,7 @@ function VariantsEditor({ productId, variants, setVariants }) {
         setVariants(prev => [...prev, data])
       }
     } else {
-      // Fallback — should not happen since productId is pre-generated
+      // New product not saved yet — temp state, saved to DB in handleSave
       setVariants(prev => [...prev, { ...payload, id: `temp_${Date.now()}` }])
     }
     setNewVar(EMPTY_VAR)
@@ -146,6 +146,7 @@ export default function AdminProducts() {
   const [existingImages, setExistingImages] = useState([])
   const [deleteConfirm,   setDeleteConfirm]   = useState(null)
   const [variants,        setVariants]        = useState([])
+  const variantsRef = useRef([])  // Always current — avoids stale closure in handleSave
   const [editProductId,   setEditProductId]   = useState(null)
   const [productTypes,    setProductTypes]    = useState([])
   const [collections,     setCollections]     = useState([])
@@ -158,6 +159,9 @@ export default function AdminProducts() {
     }
     check()
   }, [navigate])
+
+  // Keep ref in sync so handleSave always reads latest variants
+  useEffect(() => { variantsRef.current = variants }, [variants])
 
   async function loadVariants(productId) {
     if (!productId) { setVariants([]); return }
@@ -184,11 +188,11 @@ export default function AdminProducts() {
   }
 
   function openNew() {
-    const newProductId = crypto.randomUUID()  // Pre-generate so variants save to DB immediately
     setForm(EMPTY_FORM)
     setEditId(null)
-    setEditProductId(newProductId)  // Pass to VariantsEditor right away
+    setEditProductId(null)
     setVariants([])
+    variantsRef.current = []
     setPendingImages([])
     setPreviewUrls([])
     setExistingImages([])
@@ -256,7 +260,7 @@ export default function AdminProducts() {
     }
     setSaving(true)
 
-    const productId = editId || editProductId  // editProductId pre-generated in openNew
+    const productId = editId || crypto.randomUUID()
     const allImages = await uploadImages(productId)
 
     const isVariantProduct = form.product_type && form.product_type.includes('tshirt')
@@ -286,6 +290,24 @@ export default function AdminProducts() {
     if (error) {
       alert('Error saving product: ' + error.message)
     } else {
+      // Save any temp variants using ref — always has latest state
+      if (isVariantProduct && variantsRef.current.length > 0) {
+        const tempVars = variantsRef.current.filter(v => v.id && String(v.id).startsWith('temp_'))
+        if (tempVars.length > 0) {
+          const { error: varError } = await supabase.from('product_variants').insert(
+            tempVars.map((v, i) => ({
+              product_id:  productId,
+              color_style: v.color_style,
+              size:         v.size,
+              price:        v.price,
+              stock:        v.stock,
+              sort_order:   v.sort_order ?? i,
+              is_active:    true,
+            }))
+          )
+          if (varError) alert('Warning: some variants may not have saved: ' + varError.message)
+        }
+      }
       setShowForm(false)
       await loadProducts()
     }
@@ -331,13 +353,7 @@ export default function AdminProducts() {
                 <h2 className="font-cinzel font-bold text-gold tracking-wide">
                   {editId ? 'Edit Product' : 'Add New Product'}
                 </h2>
-                <button onClick={async () => {
-                  // If new product (no editId), clean up any pre-saved variants
-                  if (!editId && editProductId) {
-                    await supabase.from('product_variants').delete().eq('product_id', editProductId)
-                  }
-                  setShowForm(false)
-                }} className="text-cream/50 hover:text-cream transition-colors">
+                <button onClick={() => setShowForm(false)} className="text-cream/50 hover:text-cream transition-colors">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
