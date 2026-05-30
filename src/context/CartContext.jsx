@@ -16,33 +16,42 @@ export function CartProvider({ children }) {
   }, [items])
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0)
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  const subtotal   = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
 
-  function addItem(product, quantity = 1) {
+  function addItem(product, quantity = 1, variant = null) {
     setItems(prev => {
-      const existing = prev.find(i => i.id === product.id)
+      // For variant products, key is id + variantId; for regular, just id
+      const key = variant ? `${product.id}__${variant.id}` : product.id
+      const existing = prev.find(i => i.cartKey === key)
       if (existing) {
-        return prev.map(i =>
-          i.id === product.id ? { ...i, quantity: i.quantity + quantity } : i
-        )
+        return prev.map(i => i.cartKey === key ? { ...i, quantity: i.quantity + quantity } : i)
       }
-      return [...prev, { ...product, quantity }]
+      const item = {
+        ...product,
+        cartKey:    key,
+        quantity,
+        // Override price with variant price if applicable
+        price:      variant ? variant.price : product.price,
+        // Variant display info
+        variantId:   variant?.id    || null,
+        variantColor: variant?.color_style || null,
+        variantSize:  variant?.size        || null,
+      }
+      return [...prev, item]
     })
     setIsOpen(true)
   }
 
-  function removeItem(id) {
-    setItems(prev => prev.filter(i => i.id !== id))
+  function removeItem(cartKey) {
+    setItems(prev => prev.filter(i => i.cartKey !== cartKey))
   }
 
-  function updateQuantity(id, quantity) {
-    if (quantity < 1) { removeItem(id); return }
-    setItems(prev => prev.map(i => i.id === id ? { ...i, quantity } : i))
+  function updateQuantity(cartKey, quantity) {
+    if (quantity < 1) { removeItem(cartKey); return }
+    setItems(prev => prev.map(i => i.cartKey === cartKey ? { ...i, quantity } : i))
   }
 
-  function clearCart() {
-    setItems([])
-  }
+  function clearCart() { setItems([]) }
 
   return (
     <CartContext.Provider value={{
