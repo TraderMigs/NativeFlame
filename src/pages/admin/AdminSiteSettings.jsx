@@ -90,11 +90,20 @@ function CollectionImages() {
     const { error } = await supabase.storage.from('product-images').upload(path, file, { upsert: true })
     if (!error) {
       const key = side === 'left' ? 'collection_image_left' : 'collection_image_right'
-      await supabase.from('site_settings').upsert({ key, value: path }, { onConflict: 'key' })
-      if (side === 'left') setLeftImage(path)
-      else                 setRightImage(path)
-      setSaved(true)
-      setTimeout(() => setSaved(false), 3000)
+      const { error: dbError } = await supabase
+        .from('site_settings')
+        .update({ value: path })
+        .eq('key', key)
+      if (dbError) {
+        alert('Image uploaded but failed to save: ' + dbError.message)
+      } else {
+        if (side === 'left') setLeftImage(path)
+        else                 setRightImage(path)
+        setSaved(true)
+        setTimeout(() => setSaved(false), 3000)
+      }
+    } else {
+      alert('Upload failed: ' + error.message)
     }
     setUploading(p => ({ ...p, [side]: false }))
   }
