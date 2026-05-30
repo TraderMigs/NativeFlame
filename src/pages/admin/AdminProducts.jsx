@@ -72,6 +72,19 @@ function VariantsEditor({ productId, variants, setVariants, variantsRef }) {
     }
   }
 
+  async function updateVariantField(id, field, raw) {
+    // Parse correctly based on field type
+    const value = field === 'price'
+      ? parseFloat(raw) || 0
+      : field === 'stock'
+        ? parseInt(raw) || 0
+        : raw  // color_style and size stay as strings
+    setVariants(prev => prev.map(v => v.id === id ? { ...v, [field]: value } : v))
+    if (!id.startsWith('temp_') && productId) {
+      await supabase.from('product_variants').update({ [field]: value }).eq('id', id)
+    }
+  }
+
   return (
     <div className="space-y-4 border-t border-parchment-dark pt-4">
       <div className="flex items-center gap-2">
@@ -89,11 +102,26 @@ function VariantsEditor({ productId, variants, setVariants, variantsRef }) {
           </div>
           {variants.map(v => (
             <div key={v.id} className="grid grid-cols-5 gap-2 items-center bg-parchment px-2 py-2">
-              <p className="font-lora text-sm text-mahogany">{v.color_style}</p>
-              <p className="font-cinzel text-sm text-mahogany">{v.size}</p>
-              <p className="font-cinzel text-sm text-gold">${Number(v.price).toFixed(2)}</p>
-              <input type="number" min="0" value={v.stock}
-                onChange={e => updateVariantStock(v.id, e.target.value)}
+              <input
+                value={v.color_style}
+                onChange={e => updateVariantField(v.id, 'color_style', e.target.value)}
+                className="input-field text-sm py-1 w-full"
+                placeholder="Style / Color"/>
+              <input
+                value={v.size}
+                onChange={e => updateVariantField(v.id, 'size', e.target.value)}
+                className="input-field text-sm py-1 w-full"
+                placeholder="Size"/>
+              <input
+                type="number" step="0.01" min="0"
+                value={v.price}
+                onChange={e => updateVariantField(v.id, 'price', e.target.value)}
+                className="input-field text-sm py-1 w-full"
+                placeholder="0.00"/>
+              <input
+                type="number" min="0"
+                value={v.stock}
+                onChange={e => updateVariantField(v.id, 'stock', e.target.value)}
                 className="input-field text-sm py-1 w-full"/>
               <button type="button" onClick={() => removeVariant(v.id)}
                 className="text-mahogany/30 hover:text-red-500 transition-colors text-center">
