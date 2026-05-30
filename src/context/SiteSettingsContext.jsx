@@ -30,7 +30,9 @@ export const DEFAULT_CONTENT = {
   about_heading:     'Crafted with Faith, Poured with Purpose',
   about_body:        'Every Native Flame candle is made by hand in the heart of Texas. Jennifer brings heritage, faith, and a love of the land into each small-batch pour — creating scents that feel like coming home.',
   testimonial_quote: "\"These candles fill the room with something you can't quite describe — it feels like memory, like home.\"",
-  testimonial_by:    '— Happy Customer',
+  testimonial_by:           '— Happy Customer',
+  collection_image_left:    '',
+  collection_image_right:   '',
 }
 
 export const DEFAULT_SHIPPING = {
