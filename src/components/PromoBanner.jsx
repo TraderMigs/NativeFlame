@@ -18,7 +18,7 @@ export default function PromoBanner() {
           .or(`ends_at.is.null,ends_at.gte.${now}`)
           .order('created_at', { ascending: false })
           .limit(1)
-          .single()
+          .maybeSingle()
         if (data) {
           // Check if this promo was already dismissed this session
           const key = `promo_dismissed_${data.id}`
