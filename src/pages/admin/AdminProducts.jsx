@@ -356,8 +356,8 @@ export default function AdminProducts() {
         {/* Product Form Modal */}
         {showForm && (
           <div className="fixed inset-0 bg-mahogany/60 z-50 flex items-start justify-center overflow-y-auto py-8 px-4">
-            <div className="bg-cream w-full max-w-2xl shadow-2xl">
-              <div className="flex items-center justify-between px-6 py-5 border-b border-parchment-dark bg-mahogany">
+            <div className="bg-cream w-full max-w-2xl shadow-2xl flex flex-col max-h-[calc(100vh-4rem)]">
+              <div className="flex items-center justify-between px-6 py-5 border-b border-parchment-dark bg-mahogany shrink-0">
                 <h2 className="font-cinzel font-bold text-gold tracking-wide">
                   {variantPhase ? 'Add Variants' : editId ? 'Edit Product' : 'Add New Product'}
                 </h2>
@@ -370,7 +370,7 @@ export default function AdminProducts() {
 
               {variantPhase ? (
                 /* ── PHASE 2: Product saved — add variants ── */
-                <div className="p-6 space-y-5">
+                <div className="p-6 space-y-5 overflow-y-auto flex-1">
                   <div className="bg-teal/10 border border-teal/30 px-4 py-3 flex items-center gap-3">
                     <svg className="w-5 h-5 text-teal-dark shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -397,7 +397,7 @@ export default function AdminProducts() {
                   </button>
                 </div>
               ) : (
-              <form onSubmit={handleSave} className="p-6 space-y-5">
+              <form onSubmit={handleSave} className="p-6 space-y-5 overflow-y-auto flex-1">
                 {/* Name + Collection */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
