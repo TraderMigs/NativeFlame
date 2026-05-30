@@ -3,6 +3,126 @@ import { Link, useNavigate } from 'react-router-dom'
 import { supabase, getImageUrl } from '../../lib/supabase'
 
 // Product types loaded from Supabase
+// ── Variants Editor Sub-Component ──────────────────────────────────
+function VariantsEditor({ productId, variants, setVariants }) {
+  const EMPTY_VAR = { color_style: '', size: '', price: '', stock: '' }
+  const [newVar,   setNewVar]   = useState(EMPTY_VAR)
+  const [saving,   setSaving]   = useState(false)
+  const [editVar,  setEditVar]  = useState(null) // id being edited inline
+
+  function fv(k, v) { setNewVar(p => ({ ...p, [k]: v })) }
+
+  async function addVariant() {
+    if (!newVar.color_style.trim() || !newVar.size.trim() || !newVar.price || !newVar.stock === '') return
+    setSaving(true)
+    const payload = {
+      color_style: newVar.color_style.trim(),
+      size:        newVar.size.trim(),
+      price:       parseFloat(newVar.price),
+      stock:       parseInt(newVar.stock),
+      sort_order:  variants.length,
+      is_active:   true,
+    }
+    if (productId) {
+      // Product already exists — save to DB immediately
+      const { data } = await supabase.from('product_variants')
+        .insert({ ...payload, product_id: productId }).select().single()
+      if (data) setVariants(prev => [...prev, data])
+    } else {
+      // New product not saved yet — keep in local state with temp id
+      setVariants(prev => [...prev, { ...payload, id: `temp_${Date.now()}` }])
+    }
+    setNewVar(EMPTY_VAR)
+    setSaving(false)
+  }
+
+  async function removeVariant(id) {
+    if (!id.startsWith('temp_') && productId) {
+      await supabase.from('product_variants').delete().eq('id', id)
+    }
+    setVariants(prev => prev.filter(v => v.id !== id))
+  }
+
+  async function updateVariantStock(id, stock) {
+    const qty = parseInt(stock) || 0
+    setVariants(prev => prev.map(v => v.id === id ? { ...v, stock: qty } : v))
+    if (!id.startsWith('temp_') && productId) {
+      await supabase.from('product_variants').update({ stock: qty }).eq('id', id)
+    }
+  }
+
+  return (
+    <div className="space-y-4 border-t border-parchment-dark pt-4">
+      <div className="flex items-center gap-2">
+        <p className="font-raleway text-xs uppercase tracking-wider text-mahogany/50">👕 T-Shirt Variants</p>
+        <span className="font-raleway text-xs text-mahogany/30">— each combo of style/color + size is one variant</span>
+      </div>
+
+      {/* Existing variants */}
+      {variants.length > 0 && (
+        <div className="space-y-2">
+          <div className="grid grid-cols-5 gap-2 px-2">
+            {['Style / Color','Size','Price','Stock',''].map(h => (
+              <p key={h} className="font-raleway text-xs text-mahogany/40 uppercase tracking-wider">{h}</p>
+            ))}
+          </div>
+          {variants.map(v => (
+            <div key={v.id} className="grid grid-cols-5 gap-2 items-center bg-parchment px-2 py-2">
+              <p className="font-lora text-sm text-mahogany">{v.color_style}</p>
+              <p className="font-cinzel text-sm text-mahogany">{v.size}</p>
+              <p className="font-cinzel text-sm text-gold">${Number(v.price).toFixed(2)}</p>
+              <input type="number" min="0" value={v.stock}
+                onChange={e => updateVariantStock(v.id, e.target.value)}
+                className="input-field text-sm py-1 w-full"/>
+              <button type="button" onClick={() => removeVariant(v.id)}
+                className="text-mahogany/30 hover:text-red-500 transition-colors text-center">
+                <svg className="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Add new variant row */}
+      <div className="bg-white border border-parchment-dark p-3 space-y-3">
+        <p className="font-raleway text-xs uppercase tracking-wider text-mahogany/50">Add Variant</p>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="font-raleway text-xs text-mahogany/40 block mb-1">Style / Color *</label>
+            <input value={newVar.color_style} onChange={e => fv('color_style', e.target.value)}
+              className="input-field text-sm" placeholder="Indian, Black Eagle, Purple..."/>
+          </div>
+          <div>
+            <label className="font-raleway text-xs text-mahogany/40 block mb-1">Size *</label>
+            <input value={newVar.size} onChange={e => fv('size', e.target.value)}
+              className="input-field text-sm" placeholder="S, M, L, XL, 2XL, Youth M..."/>
+          </div>
+          <div>
+            <label className="font-raleway text-xs text-mahogany/40 block mb-1">Price ($) *</label>
+            <input type="number" step="0.01" min="0" value={newVar.price} onChange={e => fv('price', e.target.value)}
+              className="input-field text-sm" placeholder="35.00"/>
+          </div>
+          <div>
+            <label className="font-raleway text-xs text-mahogany/40 block mb-1">Stock *</label>
+            <input type="number" min="0" value={newVar.stock} onChange={e => fv('stock', e.target.value)}
+              className="input-field text-sm" placeholder="10"/>
+          </div>
+        </div>
+        <button type="button" onClick={addVariant} disabled={saving || !newVar.color_style || !newVar.size || !newVar.price || newVar.stock === ''}
+          className="btn-outline text-xs px-4 py-2 flex items-center gap-2 disabled:opacity-40">
+          {saving ? <><div className="w-3 h-3 border border-mahogany border-t-transparent rounded-full animate-spin"/>Adding...</> : '+ Add Variant'}
+        </button>
+      </div>
+
+      {variants.length === 0 && (
+        <p className="font-raleway text-xs text-amber-600">⚠️ Add at least one variant so customers can order this shirt.</p>
+      )}
+    </div>
+  )
+}
+
 const EMPTY_FORM = {
   name: '', collection: 'Standard', product_type: 'candle', description: '', scent_notes: '',
   price: '', size_oz: '7', stock: '', is_active: true
@@ -32,6 +152,14 @@ export default function AdminProducts() {
     }
     check()
   }, [navigate])
+
+  async function loadVariants(productId) {
+    if (!productId) { setVariants([]); return }
+    const { data } = await supabase.from('product_variants')
+      .select('*').eq('product_id', productId).eq('is_active', true)
+      .order('sort_order', { ascending: true })
+    setVariants(data || [])
+  }
 
   async function loadProductTypes() {
     const [{ data: types }, { data: cols }] = await Promise.all([
@@ -110,8 +238,9 @@ export default function AdminProducts() {
 
   async function handleSave(e) {
     e.preventDefault()
-    if (!form.name || !form.price || !form.stock) {
-      alert('Name, price, and stock are required.')
+    const isVariantProd = form.product_type && form.product_type.includes('tshirt')
+    if (!form.name || !form.price || (!isVariantProd && !form.stock)) {
+      alert('Name and price are required.' + (!isVariantProd ? ' Stock is also required.' : ''))
       return
     }
     setSaving(true)
@@ -119,6 +248,7 @@ export default function AdminProducts() {
     const productId = editId || crypto.randomUUID()
     const allImages = await uploadImages(productId)
 
+    const isVariantProduct = form.product_type && form.product_type.includes('tshirt')
     const payload = {
       name: form.name,
       collection: form.collection,
@@ -126,8 +256,9 @@ export default function AdminProducts() {
       description: form.description,
       scent_notes: form.scent_notes,
       price: parseFloat(form.price),
-      size_oz: parseFloat(form.size_oz),
-      stock: parseInt(form.stock),
+      size_oz: isVariantProduct ? null : parseFloat(form.size_oz),
+      stock: isVariantProduct ? 0 : parseInt(form.stock),
+      has_variants: isVariantProduct,
       is_active: form.is_active,
       images: allImages,
       updated_at: new Date().toISOString()
@@ -223,24 +354,42 @@ export default function AdminProducts() {
                   </div>
                 </div>
 
-                {/* Price + Size + Stock */}
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="font-raleway text-xs uppercase tracking-wider text-mahogany/50 block mb-1">Price ($) *</label>
+                {/* Price + Size + Stock — hide size/stock for t-shirt variants */}
+                {form.product_type && form.product_type.includes('tshirt') ? (
+                  <div className="max-w-48">
+                    <label className="font-raleway text-xs uppercase tracking-wider text-mahogany/50 block mb-1">Base Price ($) *</label>
                     <input value={form.price} onChange={e => setForm(p => ({...p, price: e.target.value}))}
-                      type="number" step="0.01" min="0" className="input-field" placeholder="24.00" required />
+                      type="number" step="0.01" min="0" className="input-field" placeholder="35.00" required />
+                    <p className="font-raleway text-xs text-mahogany/30 mt-1">Each variant can have its own price below</p>
                   </div>
-                  <div>
-                    <label className="font-raleway text-xs uppercase tracking-wider text-mahogany/50 block mb-1">Size (oz)</label>
-                    <input value={form.size_oz} onChange={e => setForm(p => ({...p, size_oz: e.target.value}))}
-                      type="number" step="0.5" min="1" className="input-field" placeholder="7" />
+                ) : (
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <label className="font-raleway text-xs uppercase tracking-wider text-mahogany/50 block mb-1">Price ($) *</label>
+                      <input value={form.price} onChange={e => setForm(p => ({...p, price: e.target.value}))}
+                        type="number" step="0.01" min="0" className="input-field" placeholder="24.00" required />
+                    </div>
+                    <div>
+                      <label className="font-raleway text-xs uppercase tracking-wider text-mahogany/50 block mb-1">Size (oz)</label>
+                      <input value={form.size_oz} onChange={e => setForm(p => ({...p, size_oz: e.target.value}))}
+                        type="number" step="0.5" min="1" className="input-field" placeholder="7" />
+                    </div>
+                    <div>
+                      <label className="font-raleway text-xs uppercase tracking-wider text-mahogany/50 block mb-1">Stock *</label>
+                      <input value={form.stock} onChange={e => setForm(p => ({...p, stock: e.target.value}))}
+                        type="number" min="0" className="input-field" placeholder="20" required />
+                    </div>
                   </div>
-                  <div>
-                    <label className="font-raleway text-xs uppercase tracking-wider text-mahogany/50 block mb-1">Stock *</label>
-                    <input value={form.stock} onChange={e => setForm(p => ({...p, stock: e.target.value}))}
-                      type="number" min="0" className="input-field" placeholder="20" required />
-                  </div>
-                </div>
+                )}
+
+                {/* ── VARIANTS SECTION (t-shirt products only) ── */}
+                {form.product_type && form.product_type.includes('tshirt') && (
+                  <VariantsEditor
+                    productId={editProductId}
+                    variants={variants}
+                    setVariants={setVariants}
+                  />
+                )}
 
                 {/* Description */}
                 <div>
