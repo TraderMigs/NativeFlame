@@ -34,7 +34,12 @@ function VariantsEditor({ productId, variants, setVariants }) {
       }
     } else {
       // New product not saved yet — temp state, saved to DB in handleSave
-      setVariants(prev => [...prev, { ...payload, id: `temp_${Date.now()}` }])
+      // Update ref synchronously inside setState so handleSave always has latest
+      setVariants(prev => {
+        const next = [...prev, { ...payload, id: `temp_${Date.now()}` }]
+        variantsRef.current = next
+        return next
+      })
     }
     setNewVar(EMPTY_VAR)
     setSaving(false)
@@ -160,9 +165,6 @@ export default function AdminProducts() {
     check()
   }, [navigate])
 
-  // Keep ref in sync so handleSave always reads latest variants
-  useEffect(() => { variantsRef.current = variants }, [variants])
-
   async function loadVariants(productId) {
     if (!productId) { setVariants([]); return }
     const { data } = await supabase.from('product_variants')
@@ -191,8 +193,8 @@ export default function AdminProducts() {
     setForm(EMPTY_FORM)
     setEditId(null)
     setEditProductId(null)
-    setVariants([])
     variantsRef.current = []
+    setVariants([])
     setPendingImages([])
     setPreviewUrls([])
     setExistingImages([])
