@@ -153,6 +153,7 @@ export default function AdminProducts() {
   const [variants,        setVariants]        = useState([])
   const variantsRef = useRef([])  // Always current — avoids stale closure in handleSave
   const [editProductId,   setEditProductId]   = useState(null)
+  const [variantPhase,    setVariantPhase]    = useState(false)  // true = product saved, now add variants
   const [productTypes,    setProductTypes]    = useState([])
   const [collections,     setCollections]     = useState([])
 
@@ -215,6 +216,7 @@ export default function AdminProducts() {
     })
     setEditId(product.id)
     setEditProductId(product.id)
+    setVariantPhase(false)
     loadVariants(product.id)
     setExistingImages(product.images || [])
     setPendingImages([])
@@ -291,26 +293,19 @@ export default function AdminProducts() {
     if (error) {
       alert('Error saving product: ' + error.message)
     } else {
-      // Save any temp variants using ref — always has latest state
-      if (isVariantProduct && variantsRef.current.length > 0) {
-        const tempVars = variantsRef.current.filter(v => v.id && String(v.id).startsWith('temp_'))
-        if (tempVars.length > 0) {
-          const { error: varError } = await supabase.from('product_variants').insert(
-            tempVars.map((v, i) => ({
-              product_id:  productId,
-              color_style: v.color_style,
-              size:         v.size,
-              price:        v.price,
-              stock:        v.stock,
-              sort_order:   v.sort_order ?? i,
-              is_active:    true,
-            }))
-          )
-          if (varError) alert('Warning: some variants may not have saved: ' + varError.message)
-        }
-      }
-      setShowForm(false)
       await loadProducts()
+      if (isVariantProduct && !editId) {
+        // Phase 1 complete for NEW t-shirt — keep modal open for variants
+        setEditId(productId)
+        setEditProductId(productId)
+        setVariants([])
+        variantsRef.current = []
+        setVariantPhase(true)
+      } else {
+        // Non-variant product, or editing existing — close normally
+        setShowForm(false)
+        setVariantPhase(false)
+      }
     }
     setSaving(false)
   }
@@ -352,7 +347,7 @@ export default function AdminProducts() {
             <div className="bg-cream w-full max-w-2xl shadow-2xl">
               <div className="flex items-center justify-between px-6 py-5 border-b border-parchment-dark bg-mahogany">
                 <h2 className="font-cinzel font-bold text-gold tracking-wide">
-                  {editId ? 'Edit Product' : 'Add New Product'}
+                  {variantPhase ? 'Add Variants' : editId ? 'Edit Product' : 'Add New Product'}
                 </h2>
                 <button onClick={() => setShowForm(false)} className="text-cream/50 hover:text-cream transition-colors">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -361,6 +356,35 @@ export default function AdminProducts() {
                 </button>
               </div>
 
+              {variantPhase ? (
+                /* ── PHASE 2: Product saved — add variants ── */
+                <div className="p-6 space-y-5">
+                  <div className="bg-teal/10 border border-teal/30 px-4 py-3 flex items-center gap-3">
+                    <svg className="w-5 h-5 text-teal-dark shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <div>
+                      <p className="font-cinzel text-sm font-semibold text-mahogany">Product saved!</p>
+                      <p className="font-raleway text-xs text-mahogany/60 mt-0.5">Now add your sizes and styles below. Each one saves instantly.</p>
+                    </div>
+                  </div>
+
+                  <VariantsEditor
+                    productId={editProductId}
+                    variants={variants}
+                    setVariants={setVariants}
+                    variantsRef={variantsRef}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => { setShowForm(false); setVariantPhase(false) }}
+                    className="btn-gold w-full"
+                  >
+                    Done
+                  </button>
+                </div>
+              ) : (
               <form onSubmit={handleSave} className="p-6 space-y-5">
                 {/* Name + Collection */}
                 <div className="grid grid-cols-2 gap-4">
@@ -417,8 +441,8 @@ export default function AdminProducts() {
                   </div>
                 )}
 
-                {/* ── VARIANTS SECTION (t-shirt products only) ── */}
-                {form.product_type && form.product_type.includes('tshirt') && (
+                {/* ── VARIANTS SECTION — only when EDITING existing t-shirt ── */}
+                {editId && form.product_type && form.product_type.includes('tshirt') && (
                   <VariantsEditor
                     productId={editProductId}
                     variants={variants}
@@ -515,6 +539,7 @@ export default function AdminProducts() {
                   </button>
                 </div>
               </form>
+              )}
             </div>
           </div>
         )}
