@@ -13,36 +13,48 @@ function VariantsEditor({ productId, variants, setVariants, variantsRef }) {
   function fv(k, v) { setNewVar(p => ({ ...p, [k]: v })) }
 
   async function addVariant() {
-    if (!newVar.color_style.trim() || !newVar.size.trim() || !newVar.price || !newVar.stock === '') return
+    if (!newVar.color_style.trim() || !newVar.size.trim() || !newVar.price) return
     setSaving(true)
     const payload = {
       color_style: newVar.color_style.trim(),
       size:        newVar.size.trim(),
       price:       parseFloat(newVar.price),
-      stock:       parseInt(newVar.stock),
+      stock:       parseInt(newVar.stock) || 0,
       sort_order:  variants.length,
       is_active:   true,
     }
-    if (productId) {
-      // Editing existing product — save directly to DB
-      const { data, error } = await supabase.from('product_variants')
-        .insert({ ...payload, product_id: productId }).select().single()
-      if (error) {
-        alert('Error saving variant: ' + error.message)
-      } else if (data) {
-        setVariants(prev => [...prev, data])
+    try {
+      if (productId) {
+        // Generate UUID client-side — same ID used in DB and local state
+        // This means remove/update always find the right row, no read-back needed
+        const variantId = crypto.randomUUID()
+        const { error } = await supabase
+          .from('product_variants')
+          .insert({ ...payload, product_id: productId, id: variantId })
+        if (error) {
+          alert('Error saving variant: ' + error.message)
+          return
+        }
+        // Add to local state with the EXACT same ID that's now in the DB
+        setVariants(prev => [
+          ...prev,
+          { ...payload, product_id: productId, id: variantId }
+        ])
+      } else {
+        // Temp state — product not yet in DB (should not happen in phase 2)
+        setVariants(prev => {
+          const next = [...prev, { ...payload, id: `temp_${Date.now()}` }]
+          variantsRef.current = next
+          return next
+        })
       }
-    } else {
-      // New product not saved yet — temp state, saved to DB in handleSave
-      // Update ref synchronously inside setState so handleSave always has latest
-      setVariants(prev => {
-        const next = [...prev, { ...payload, id: `temp_${Date.now()}` }]
-        variantsRef.current = next
-        return next
-      })
+      setNewVar(EMPTY_VAR)
+    } catch (err) {
+      alert('Error saving variant: ' + (err.message || 'Unknown error. Please try again.'))
+    } finally {
+      // ALWAYS resets — button never gets permanently stuck disabled
+      setSaving(false)
     }
-    setNewVar(EMPTY_VAR)
-    setSaving(false)
   }
 
   async function removeVariant(id) {
