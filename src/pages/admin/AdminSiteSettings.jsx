@@ -1,6 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useSiteSettings, DEFAULT_COLORS, DEFAULT_CONTENT } from '../../context/SiteSettingsContext'
+import { supabase, getImageUrl } from '../../lib/supabase'
 
 /* ── Color swatches: lighter → darker for each section's base hue ── */
 const SECTION_PALETTES = {
@@ -59,6 +60,111 @@ const CONTENT_FIELDS = [
   { key: 'testimonial_quote', label: 'Testimonial — Quote',       type: 'textarea' },
   { key: 'testimonial_by',    label: 'Testimonial — Attribution', type: 'text' },
 ]
+
+// ── Collection Images Sub-Component ────────────────────────────────
+function CollectionImages() {
+  const [leftImage,    setLeftImage]    = useState('')
+  const [rightImage,   setRightImage]   = useState('')
+  const [uploading,    setUploading]    = useState({ left: false, right: false })
+  const [saved,        setSaved]        = useState(false)
+
+  useEffect(() => {
+    async function load() {
+      const { data } = await supabase.from('site_settings')
+        .select('key,value')
+        .in('key', ['collection_image_left','collection_image_right'])
+      if (data) {
+        data.forEach(r => {
+          if (r.key === 'collection_image_left')  setLeftImage(r.value || '')
+          if (r.key === 'collection_image_right') setRightImage(r.value || '')
+        })
+      }
+    }
+    load()
+  }, [])
+
+  async function uploadImage(file, side) {
+    setUploading(p => ({ ...p, [side]: true }))
+    const ext  = file.name.split('.').pop()
+    const path = `collection-panels/${side}-${Date.now()}.${ext}`
+    const { error } = await supabase.storage.from('product-images').upload(path, file, { upsert: true })
+    if (!error) {
+      const key = side === 'left' ? 'collection_image_left' : 'collection_image_right'
+      await supabase.from('site_settings').upsert({ key, value: path }, { onConflict: 'key' })
+      if (side === 'left') setLeftImage(path)
+      else                 setRightImage(path)
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+    }
+    setUploading(p => ({ ...p, [side]: false }))
+  }
+
+  async function removeImage(side) {
+    const key = side === 'left' ? 'collection_image_left' : 'collection_image_right'
+    await supabase.from('site_settings').upsert({ key, value: '' }, { onConflict: 'key' })
+    if (side === 'left') setLeftImage('')
+    else                 setRightImage('')
+  }
+
+  function PanelUpload({ side, label, sublabel, currentImage }) {
+    return (
+      <div className="bg-white border border-parchment-dark overflow-hidden">
+        <div className="px-5 py-4 border-b border-parchment-dark">
+          <h3 className="font-cinzel text-sm font-semibold text-mahogany">{label}</h3>
+          <p className="font-raleway text-xs text-mahogany/40 mt-0.5">{sublabel}</p>
+        </div>
+
+        {/* Preview */}
+        <div className="aspect-video overflow-hidden bg-parchment relative">
+          {currentImage ? (
+            <>
+              <img src={getImageUrl(currentImage)} alt=""
+                className="w-full h-full object-cover"/>
+              <button onClick={() => removeImage(side)}
+                className="absolute top-2 right-2 bg-red-500 text-cream text-xs font-raleway px-2 py-1 hover:bg-red-600 transition-colors">
+                Remove
+              </button>
+            </>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <p className="font-lora text-sm italic text-mahogany/30">No image — shows placeholder</p>
+            </div>
+          )}
+        </div>
+
+        {/* Upload */}
+        <div className="px-5 py-4">
+          <label className="cursor-pointer block">
+            <input type="file" accept="image/*" className="hidden"
+              onChange={e => e.target.files[0] && uploadImage(e.target.files[0], side)}/>
+            <div className={`border-2 border-dashed border-parchment-dark hover:border-gold transition-colors px-4 py-4 text-center ${
+              uploading[side] ? 'opacity-50 cursor-not-allowed' : ''
+            }`}>
+              {uploading[side]
+                ? <><div className="w-5 h-5 border-2 border-gold border-t-transparent rounded-full animate-spin mx-auto mb-2"/><p className="font-raleway text-xs text-mahogany/50">Uploading...</p></>
+                : <><p className="font-raleway text-xs font-semibold text-mahogany uppercase tracking-wider">Click to upload photo</p>
+                   <p className="font-raleway text-xs text-mahogany/40 mt-1">Any size or shape — auto-crops to fit. JPG or PNG.</p></>
+              }
+            </div>
+          </label>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      <p className="font-lora text-sm italic text-mahogany/60">
+        Upload photos for the two panels on the homepage. Any photo size works — images automatically crop to fill the panel perfectly.
+        {saved && <span className="ml-3 text-teal-dark font-semibold not-italic">✓ Saved!</span>}
+      </p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <PanelUpload side="left"  label="Left Panel — Natural & Warm"   sublabel="Everyday Collection"      currentImage={leftImage}/>
+        <PanelUpload side="right" label="Right Panel — Bold & Refined"  sublabel="Coffee House Collection"  currentImage={rightImage}/>
+      </div>
+    </div>
+  )
+}
 
 export default function AdminSiteSettings() {
   const { colors, content, saveColors, saveContent } = useSiteSettings()
@@ -150,6 +256,7 @@ export default function AdminSiteSettings() {
           {[
             { id: 'colors',  label: '🎨 Section Colors' },
             { id: 'content', label: '✏️ Page Text' },
+            { id: 'images',  label: '🖼️ Collection Images' },
           ].map(({ id, label }) => (
             <button key={id} onClick={() => setActiveTab(id)}
               className={`px-6 py-3 font-raleway text-xs font-semibold tracking-widest uppercase transition-colors border-b-2 -mb-px ${
@@ -242,6 +349,11 @@ export default function AdminSiteSettings() {
               </div>
             ))}
           </div>
+        )}
+
+        {/* ── COLLECTION IMAGES TAB ── */}
+        {activeTab === 'images' && (
+          <CollectionImages />
         )}
 
         {/* Floating save reminder */}
