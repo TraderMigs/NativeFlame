@@ -36,7 +36,7 @@ export default function ProductCard({ product }) {
           ) : (
             <div className={`w-full h-full flex items-center justify-center ${isDark ? 'bg-mahogany' : 'bg-parchment'}`}>
               <div className="text-center space-y-2">
-                <div className="text-5xl">🕯️</div>
+                <div className="text-5xl">{product.has_variants ? '👕' : '🕯️'}</div>
                 <p className={`font-cinzel text-xs tracking-widest uppercase ${isDark ? 'text-gold' : 'text-mahogany/40'}`}>
                   Native Flame
                 </p>
@@ -57,8 +57,8 @@ export default function ProductCard({ product }) {
             </div>
           )}
 
-          {/* Out of Stock */}
-          {product.stock === 0 && (
+          {/* Out of Stock — only for non-variant products */}
+          {product.stock === 0 && !product.has_variants && (
             <div className="absolute inset-0 bg-mahogany/60 flex items-center justify-center">
               <span className="font-cinzel text-cream text-sm tracking-widest uppercase">Sold Out</span>
             </div>
@@ -70,9 +70,16 @@ export default function ProductCard({ product }) {
           <h3 className="font-cinzel font-semibold text-base text-mahogany group-hover:text-gold transition-colors duration-200">
             {product.name}
           </h3>
-          <p className="font-raleway text-xs text-mahogany/50 mt-1 tracking-wide">
-            {product.size_oz} oz · Soy Blend
-          </p>
+          {!product.has_variants && (
+            <p className="font-raleway text-xs text-mahogany/50 mt-1 tracking-wide">
+              {product.size_oz} oz · Soy Blend
+            </p>
+          )}
+          {product.has_variants && (
+            <p className="font-raleway text-xs text-mahogany/50 mt-1 tracking-wide">
+              Select options →
+            </p>
+          )}
           {product.scent_notes && (
             <p className="font-lora text-xs italic text-mahogany/60 mt-2 line-clamp-1">
               {product.scent_notes}
@@ -84,19 +91,25 @@ export default function ProductCard({ product }) {
               ${Number(product.price).toFixed(2)}
             </span>
 
-            <button
-              onClick={handleAddToCart}
-              disabled={product.stock === 0 || adding}
-              className={`font-raleway text-xs font-semibold tracking-widest uppercase px-4 py-2 transition-all duration-200 ${
-                adding
-                  ? 'bg-teal text-cream'
-                  : product.stock === 0
-                  ? 'bg-parchment-dark text-mahogany/30 cursor-not-allowed'
-                  : 'bg-mahogany text-cream hover:bg-gold'
-              }`}
-            >
-              {adding ? '✓ Added' : 'Add to Cart'}
-            </button>
+            {product.has_variants ? (
+              <span className="font-raleway text-xs font-semibold tracking-widest uppercase px-4 py-2 bg-mahogany text-cream group-hover:bg-gold transition-all duration-200">
+                View Options
+              </span>
+            ) : (
+              <button
+                onClick={handleAddToCart}
+                disabled={product.stock === 0 || adding}
+                className={`font-raleway text-xs font-semibold tracking-widest uppercase px-4 py-2 transition-all duration-200 ${
+                  adding
+                    ? 'bg-teal text-cream'
+                    : product.stock === 0
+                    ? 'bg-parchment-dark text-mahogany/30 cursor-not-allowed'
+                    : 'bg-mahogany text-cream hover:bg-gold'
+                }`}
+              >
+                {adding ? '✓ Added' : 'Add to Cart'}
+              </button>
+            )}
           </div>
         </div>
       </div>
