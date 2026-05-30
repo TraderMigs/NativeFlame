@@ -305,7 +305,7 @@ export default function AdminProducts() {
           <h1 className="font-cinzel font-bold text-gold tracking-wider">Products</h1>
         </div>
         <button onClick={openNew} className="btn-gold text-xs px-5 py-2">
-          + Add New Candle
+          + Add New Product
         </button>
       </header>
 
@@ -317,7 +317,7 @@ export default function AdminProducts() {
             <div className="bg-cream w-full max-w-2xl shadow-2xl">
               <div className="flex items-center justify-between px-6 py-5 border-b border-parchment-dark bg-mahogany">
                 <h2 className="font-cinzel font-bold text-gold tracking-wide">
-                  {editId ? 'Edit Product' : 'Add New Candle'}
+                  {editId ? 'Edit Product' : 'Add New Product'}
                 </h2>
                 <button onClick={() => setShowForm(false)} className="text-cream/50 hover:text-cream transition-colors">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -330,7 +330,7 @@ export default function AdminProducts() {
                 {/* Name + Collection */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="font-raleway text-xs uppercase tracking-wider text-mahogany/50 block mb-1">Candle Name *</label>
+                    <label className="font-raleway text-xs uppercase tracking-wider text-mahogany/50 block mb-1">Product Name *</label>
                     <input value={form.name} onChange={e => setForm(p => ({...p, name: e.target.value}))}
                       className="input-field" placeholder="e.g. Moonwind" required />
                   </div>
@@ -395,15 +395,17 @@ export default function AdminProducts() {
                 <div>
                   <label className="font-raleway text-xs uppercase tracking-wider text-mahogany/50 block mb-1">Description</label>
                   <textarea value={form.description} onChange={e => setForm(p => ({...p, description: e.target.value}))}
-                    className="input-field h-24 resize-none" placeholder="Describe this candle..." />
+                    className="input-field h-24 resize-none" placeholder="Describe this product..." />
                 </div>
 
-                {/* Scent Notes */}
-                <div>
-                  <label className="font-raleway text-xs uppercase tracking-wider text-mahogany/50 block mb-1">Scent Notes</label>
-                  <input value={form.scent_notes} onChange={e => setForm(p => ({...p, scent_notes: e.target.value}))}
-                    className="input-field" placeholder="Cedar, Vanilla, Warm Amber..." />
-                </div>
+                {/* Scent Notes — hidden for t-shirt products */}
+                {!(form.product_type && form.product_type.includes('tshirt')) && (
+                  <div>
+                    <label className="font-raleway text-xs uppercase tracking-wider text-mahogany/50 block mb-1">Scent Notes</label>
+                    <input value={form.scent_notes} onChange={e => setForm(p => ({...p, scent_notes: e.target.value}))}
+                      className="input-field" placeholder="Cedar, Vanilla, Warm Amber..." />
+                  </div>
+                )}
 
                 {/* Images */}
                 <div>
@@ -470,7 +472,7 @@ export default function AdminProducts() {
                         <div className="w-4 h-4 border-2 border-cream border-t-transparent rounded-full animate-spin" />
                         {uploadingImages ? 'Uploading...' : 'Saving...'}
                       </>
-                    ) : (editId ? 'Save Changes' : 'Add Candle')}
+                    ) : (editId ? 'Save Changes' : 'Save Product')}
                   </button>
                   <button type="button" onClick={() => setShowForm(false)} className="btn-outline flex-1">
                     Cancel
@@ -528,7 +530,7 @@ export default function AdminProducts() {
           <div className="text-center py-20">
             <div className="text-6xl mb-4">🕯️</div>
             <h3 className="font-cinzel text-xl text-mahogany mb-2">No products yet</h3>
-            <button onClick={openNew} className="btn-gold mt-4">Add Your First Candle</button>
+            <button onClick={openNew} className="btn-gold mt-4">Add Your First Product</button>
           </div>
         ) : (
           <div className="space-y-3">
