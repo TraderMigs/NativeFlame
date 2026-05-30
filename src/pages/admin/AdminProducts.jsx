@@ -141,6 +141,8 @@ export default function AdminProducts() {
   const [previewUrls, setPreviewUrls] = useState([])
   const [existingImages, setExistingImages] = useState([])
   const [deleteConfirm,   setDeleteConfirm]   = useState(null)
+  const [variants,        setVariants]        = useState([])
+  const [editProductId,   setEditProductId]   = useState(null)
   const [productTypes,    setProductTypes]    = useState([])
   const [collections,     setCollections]     = useState([])
 
@@ -180,6 +182,8 @@ export default function AdminProducts() {
   function openNew() {
     setForm(EMPTY_FORM)
     setEditId(null)
+    setEditProductId(null)
+    setVariants([])
     setPendingImages([])
     setPreviewUrls([])
     setExistingImages([])
@@ -199,6 +203,8 @@ export default function AdminProducts() {
       is_active: product.is_active ?? true,
     })
     setEditId(product.id)
+    setEditProductId(product.id)
+    loadVariants(product.id)
     setExistingImages(product.images || [])
     setPendingImages([])
     setPreviewUrls([])
