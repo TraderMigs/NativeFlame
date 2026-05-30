@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
 import ProductCard from '../components/ProductCard'
 import EmailSignup from '../components/EmailSignup'
 import { useSiteSettings } from '../context/SiteSettingsContext'
