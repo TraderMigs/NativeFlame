@@ -188,9 +188,13 @@ function CheckoutForm() {
 
     if (error) throw error
 
-    // Decrement stock
+    // Decrement stock — variant products use variant-level stock
     for (const item of items) {
-      await supabase.rpc('decrement_stock', { product_id: item.id, qty: item.quantity })
+      if (item.variantId) {
+        await supabase.rpc('decrement_variant_stock', { p_variant_id: item.variantId, qty: item.quantity })
+      } else {
+        await supabase.rpc('decrement_stock', { product_id: item.id, qty: item.quantity })
+      }
     }
 
     clearCart()
@@ -357,7 +361,7 @@ function CheckoutForm() {
                 <div className="w-10 h-px bg-gold"/>
                 <div className="space-y-3 max-h-48 overflow-y-auto">
                   {items.map(item => (
-                    <div key={item.id} className="flex justify-between text-xs">
+                    <div key={item.cartKey} className="flex justify-between text-xs">
                       <span className="font-lora text-mahogany/70 truncate mr-2">{item.name} × {item.quantity}</span>
                       <span className="font-cinzel text-mahogany shrink-0">${(item.price * item.quantity).toFixed(2)}</span>
                     </div>
