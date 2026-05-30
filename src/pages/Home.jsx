@@ -4,11 +4,12 @@ import { supabase } from '../lib/supabase'
 import ProductCard from '../components/ProductCard'
 import EmailSignup from '../components/EmailSignup'
 import { useSiteSettings } from '../context/SiteSettingsContext'
+import { supabase, getImageUrl } from '../lib/supabase'
 
 export default function Home() {
   const [featured, setFeatured] = useState([])
   const [loading,  setLoading]  = useState(true)
-  const { content, colors } = useSiteSettings()
+  const { content, colors, shipping } = useSiteSettings()
 
   useEffect(() => {
     supabase.from('products').select('*').eq('is_active', true)
@@ -137,11 +138,20 @@ export default function Home() {
 
       {/* COLLECTIONS SPLIT */}
       <section className="grid grid-cols-1 md:grid-cols-2">
+        {/* Left panel */}
         <div className="relative min-h-80 flex items-end p-8 overflow-hidden"
           style={{ backgroundColor: colors.collections_light_bg }}>
-          <div className="absolute inset-0 flex items-center justify-center opacity-10">
-            <div className="w-64 h-64 rounded-full border-4 border-mahogany"/>
-          </div>
+          {/* Background image if set, otherwise placeholder circle */}
+          {content.collection_image_left ? (
+            <div className="absolute inset-0">
+              <img src={getImageUrl(content.collection_image_left)}
+                alt="" className="w-full h-full object-cover opacity-30"/>
+            </div>
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center opacity-10">
+              <div className="w-64 h-64 rounded-full border-4 border-mahogany"/>
+            </div>
+          )}
           <div className="relative z-10">
             <p className="font-raleway text-xs tracking-widest uppercase text-mahogany/50 mb-2">Everyday Collection</p>
             <h3 className="font-cinzel text-2xl md:text-3xl font-bold text-mahogany mb-4">Natural & Warm</h3>
@@ -149,11 +159,19 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Right panel */}
         <div className="relative min-h-80 flex items-end p-8 overflow-hidden"
           style={{ backgroundColor: colors.collections_dark_bg }}>
-          <div className="absolute inset-0 flex items-center justify-center opacity-5">
-            <div className="w-64 h-64 rounded-full border-4 border-gold"/>
-          </div>
+          {content.collection_image_right ? (
+            <div className="absolute inset-0">
+              <img src={getImageUrl(content.collection_image_right)}
+                alt="" className="w-full h-full object-cover opacity-30"/>
+            </div>
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center opacity-5">
+              <div className="w-64 h-64 rounded-full border-4 border-gold"/>
+            </div>
+          )}
           <div className="relative z-10">
             <p className="font-raleway text-xs tracking-widest uppercase text-gold/60 mb-2">Coffee House Collection</p>
             <h3 className="font-cinzel text-2xl md:text-3xl font-bold text-cream mb-4">Bold & Refined</h3>
