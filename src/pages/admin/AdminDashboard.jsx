@@ -91,7 +91,7 @@ export default function AdminDashboard() {
             <div className="text-3xl">🕯️</div>
             <div>
               <h3 className="font-cinzel font-semibold tracking-wide group-hover:text-gold transition-colors">Manage Products</h3>
-              <p className="font-raleway text-xs text-cream/50 mt-1">Add, edit, remove candles · Upload photos</p>
+              <p className="font-raleway text-xs text-cream/50 mt-1">Add, edit, remove products · Upload photos</p>
             </div>
             <svg className="w-5 h-5 ml-auto text-gold/40 group-hover:text-gold transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
