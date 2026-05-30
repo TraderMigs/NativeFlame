@@ -262,7 +262,7 @@ export default function AdminProducts() {
       description: form.description,
       scent_notes: form.scent_notes,
       price: parseFloat(form.price),
-      size_oz: isVariantProduct ? null : parseFloat(form.size_oz),
+      size_oz: isVariantProduct ? 0 : parseFloat(form.size_oz),
       stock: isVariantProduct ? 0 : parseInt(form.stock),
       has_variants: isVariantProduct,
       is_active: form.is_active,
