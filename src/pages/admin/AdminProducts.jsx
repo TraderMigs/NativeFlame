@@ -163,7 +163,7 @@ export default function AdminProducts() {
 
   async function loadProductTypes() {
     const [{ data: types }, { data: cols }] = await Promise.all([
-      supabase.from('product_types').select('*').eq('is_active', true).order('sort_order', { ascending: true }),
+      supabase.from('product_types').select('*').order('sort_order', { ascending: true }),
       supabase.from('collections').select('*').eq('is_active', true).order('sort_order', { ascending: true }),
     ])
     setProductTypes(types || [])
