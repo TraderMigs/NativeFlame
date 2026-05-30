@@ -24,12 +24,16 @@ function VariantsEditor({ productId, variants, setVariants }) {
       is_active:   true,
     }
     if (productId) {
-      // Product already exists — save to DB immediately
-      const { data } = await supabase.from('product_variants')
+      // Save directly to DB — productId is always set now (pre-generated in openNew)
+      const { data, error } = await supabase.from('product_variants')
         .insert({ ...payload, product_id: productId }).select().single()
-      if (data) setVariants(prev => [...prev, data])
+      if (error) {
+        alert('Error saving variant: ' + error.message)
+      } else if (data) {
+        setVariants(prev => [...prev, data])
+      }
     } else {
-      // New product not saved yet — keep in local state with temp id
+      // Fallback — should not happen since productId is pre-generated
       setVariants(prev => [...prev, { ...payload, id: `temp_${Date.now()}` }])
     }
     setNewVar(EMPTY_VAR)
@@ -180,9 +184,10 @@ export default function AdminProducts() {
   }
 
   function openNew() {
+    const newProductId = crypto.randomUUID()  // Pre-generate so variants save to DB immediately
     setForm(EMPTY_FORM)
     setEditId(null)
-    setEditProductId(null)
+    setEditProductId(newProductId)  // Pass to VariantsEditor right away
     setVariants([])
     setPendingImages([])
     setPreviewUrls([])
@@ -251,7 +256,7 @@ export default function AdminProducts() {
     }
     setSaving(true)
 
-    const productId = editId || crypto.randomUUID()
+    const productId = editId || editProductId  // editProductId pre-generated in openNew
     const allImages = await uploadImages(productId)
 
     const isVariantProduct = form.product_type && form.product_type.includes('tshirt')
@@ -274,29 +279,13 @@ export default function AdminProducts() {
     if (editId) {
       ;({ error } = await supabase.from('products').update(payload).eq('id', editId))
     } else {
+      // productId = editProductId pre-generated in openNew
       ;({ error } = await supabase.from('products').insert({ ...payload, id: productId }))
     }
 
     if (error) {
       alert('Error saving product: ' + error.message)
     } else {
-      // Save any temp variants (created before product existed in DB)
-      if (isVariantProduct && variants.length > 0) {
-        const tempVars = variants.filter(v => v.id && v.id.startsWith('temp_'))
-        if (tempVars.length > 0) {
-          await supabase.from('product_variants').insert(
-            tempVars.map(v => ({
-              product_id: productId,
-              color_style: v.color_style,
-              size:        v.size,
-              price:       v.price,
-              stock:       v.stock,
-              sort_order:  v.sort_order || 0,
-              is_active:   true,
-            }))
-          )
-        }
-      }
       setShowForm(false)
       await loadProducts()
     }
@@ -342,7 +331,13 @@ export default function AdminProducts() {
                 <h2 className="font-cinzel font-bold text-gold tracking-wide">
                   {editId ? 'Edit Product' : 'Add New Product'}
                 </h2>
-                <button onClick={() => setShowForm(false)} className="text-cream/50 hover:text-cream transition-colors">
+                <button onClick={async () => {
+                  // If new product (no editId), clean up any pre-saved variants
+                  if (!editId && editProductId) {
+                    await supabase.from('product_variants').delete().eq('product_id', editProductId)
+                  }
+                  setShowForm(false)
+                }} className="text-cream/50 hover:text-cream transition-colors">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
