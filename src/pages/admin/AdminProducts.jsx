@@ -280,6 +280,23 @@ export default function AdminProducts() {
     if (error) {
       alert('Error saving product: ' + error.message)
     } else {
+      // Save any temp variants (created before product existed in DB)
+      if (isVariantProduct && variants.length > 0) {
+        const tempVars = variants.filter(v => v.id && v.id.startsWith('temp_'))
+        if (tempVars.length > 0) {
+          await supabase.from('product_variants').insert(
+            tempVars.map(v => ({
+              product_id: productId,
+              color_style: v.color_style,
+              size:        v.size,
+              price:       v.price,
+              stock:       v.stock,
+              sort_order:  v.sort_order || 0,
+              is_active:   true,
+            }))
+          )
+        }
+      }
       setShowForm(false)
       await loadProducts()
     }
@@ -506,13 +523,13 @@ export default function AdminProducts() {
         )}
 
         {/* Low Stock Banner */}
-        {products.filter(p => p.stock <= 5 && p.is_active).length > 0 && (
+        {products.filter(p => p.stock <= 5 && p.is_active && !p.has_variants).length > 0 && (
           <div className="mb-6 bg-amber-50 border border-amber-200 px-5 py-4 flex items-start gap-3">
             <span className="text-xl shrink-0">⚠️</span>
             <div className="flex-1">
               <p className="font-cinzel text-sm font-semibold text-amber-800 mb-1">Low Stock Alert</p>
               <div className="flex flex-wrap gap-2 mt-2">
-                {products.filter(p => p.stock <= 5 && p.is_active).map(p => (
+                {products.filter(p => p.stock <= 5 && p.is_active && !p.has_variants).map(p => (
                   <span key={p.id}
                     className={`font-raleway text-xs px-3 py-1 border ${
                       p.stock === 0
@@ -561,7 +578,9 @@ export default function AdminProducts() {
                     <div className="text-right shrink-0">
                       <p className="font-cinzel font-bold text-gold">${Number(product.price).toFixed(2)}</p>
                       <p className={`font-raleway text-xs font-semibold ${
-                        product.stock === 0
+                        product.has_variants
+                          ? 'text-teal-dark'
+                          : product.stock === 0
                           ? 'text-red-500'
                           : product.stock <= 3
                           ? 'text-red-400'
@@ -569,7 +588,9 @@ export default function AdminProducts() {
                           ? 'text-amber-500'
                           : 'text-mahogany/40'
                       }`}>
-                        {product.stock === 0
+                        {product.has_variants
+                          ? 'Variants'
+                          : product.stock === 0
                           ? 'Out of Stock'
                           : product.stock <= 3
                           ? `Only ${product.stock} left!`
