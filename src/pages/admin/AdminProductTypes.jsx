@@ -226,11 +226,11 @@ export default function AdminProductTypes() {
                   </div>
 
                   {/* Info */}
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <span className="text-2xl">{t.icon || '📦'}</span>
-                    <div>
-                      <p className="font-cinzel font-semibold text-mahogany">{t.label}</p>
-                      <p className="font-raleway text-xs text-mahogany/40">slug: {t.slug}</p>
+                  <div className="flex items-center gap-3 flex-1 min-w-0 overflow-hidden">
+                    <span className="text-2xl shrink-0">{t.icon || '📦'}</span>
+                    <div className="min-w-0 overflow-hidden">
+                      <p className="font-cinzel font-semibold text-mahogany truncate">{t.label}</p>
+                      <p className="font-raleway text-xs text-mahogany/40 truncate">slug: {t.slug}</p>
                     </div>
                   </div>
 
