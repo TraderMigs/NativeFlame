@@ -367,7 +367,7 @@ export default function ProductDetail() {
             )}
 
             {/* Product Details */}
-            {!product.has_variants && (
+            {!product.has_variants && product.product_type !== 'room_spray' && (
               <div className="border-t border-parchment-dark pt-6 space-y-3">
                 {[
                   { label: 'Wax Type',  val: 'Soy Blend'          },
