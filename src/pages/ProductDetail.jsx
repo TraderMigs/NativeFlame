@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { supabase, getImageUrl } from '../lib/supabase'
+import { supabase, getImageUrl, imgColor } from '../lib/supabase'
 import { useCart } from '../context/CartContext'
 
 export default function ProductDetail() {
@@ -76,11 +76,14 @@ export default function ProductDetail() {
     return variants.find(v => v.color_style === selectedColor && v.size === selectedSize) || null
   }, [variants, selectedColor, selectedSize])
 
-  // When color changes, reset size
+  // When color changes, reset size and jump to that color's photo
   function handleColorSelect(color) {
     setSelectedColor(color)
     setSelectedSize(null)
     setAdded(false)
+    const imgs = product?.images || []
+    const idx = imgs.findIndex(img => imgColor(img) === color)
+    if (idx >= 0) setSelectedImage(idx)
   }
 
   function handleSizeSelect(size) {
