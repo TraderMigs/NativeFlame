@@ -404,8 +404,12 @@ export default function AdminProducts() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                     <div>
-                      <p className="font-cinzel text-sm font-semibold text-mahogany">Product saved!</p>
-                      <p className="font-raleway text-xs text-mahogany/60 mt-0.5">Now add your sizes and styles below. Each one saves instantly.</p>
+                      <p className="font-cinzel text-sm font-semibold text-mahogany">
+                        {editId ? 'Manage Variants' : 'Product Saved!'}
+                      </p>
+                      <p className="font-raleway text-xs text-mahogany/60 mt-0.5">
+                        {editId ? 'Add, edit, or remove sizes and styles below. Each change saves instantly.' : 'Now add your sizes and styles below. Each one saves instantly.'}
+                      </p>
                     </div>
                   </div>
 
@@ -702,6 +706,21 @@ export default function AdminProducts() {
                   >
                     Edit
                   </button>
+
+                  {product.has_variants && (
+                    <button
+                      onClick={() => {
+                        setEditProductId(product.id)
+                        setEditId(product.id)
+                        setVariantPhase(true)
+                        loadVariants(product.id)
+                        setShowForm(true)
+                      }}
+                      className="font-raleway text-xs text-teal-dark hover:text-teal transition-colors px-3 py-1.5 border border-teal/30 hover:border-teal bg-teal/5 hover:bg-teal/10"
+                    >
+                      Variants
+                    </button>
+                  )}
 
                   <button
                     onClick={() => setDeleteConfirm(product.id)}
