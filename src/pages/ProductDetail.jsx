@@ -174,10 +174,10 @@ export default function ProductDetail() {
 
           {/* Images */}
           <div className="space-y-4">
-            <div className={`aspect-square overflow-hidden ${isDark ? 'bg-mahogany' : 'bg-parchment'}`}>
+            <div className={`aspect-square overflow-hidden ${product.has_variants ? 'bg-white' : isDark ? 'bg-mahogany' : 'bg-parchment'}`}>
               {images[selectedImage]
                 ? <img src={getImageUrl(images[selectedImage])} alt={product.name}
-                    className="w-full h-full object-cover transition-opacity duration-300"/>
+                    className={`w-full h-full transition-opacity duration-300 ${product.has_variants ? 'object-contain' : 'object-cover'}`}/>
                 : <div className="w-full h-full flex items-center justify-center">
                     <div className="text-center space-y-3">
                       <div className="text-8xl">{product.has_variants ? '👕' : '🕯️'}</div>
@@ -194,7 +194,7 @@ export default function ProductDetail() {
                       selectedImage === i ? 'border-gold' : 'border-transparent hover:border-parchment-dark'
                     }`}>
                     {img
-                      ? <img src={getImageUrl(img)} alt="" className="w-full h-full object-cover"/>
+                      ? <img src={getImageUrl(img)} alt="" className={`w-full h-full ${product.has_variants ? 'object-contain bg-white' : 'object-cover'}`}/>
                       : <div className="w-full h-full bg-parchment flex items-center justify-center text-2xl">
                           {product.has_variants ? '👕' : '🕯️'}
                         </div>
