@@ -5,54 +5,72 @@ import { supabase, getImageUrl, imgColor } from '../../lib/supabase'
 // Product types loaded from Supabase
 // ── Variants Editor Sub-Component ──────────────────────────────────
 function VariantsEditor({ productId, variants, setVariants, variantsRef }) {
-  const EMPTY_VAR = { color_style: '', size: '', price: '', stock: '0' }
-  const [newVar,   setNewVar]   = useState(EMPTY_VAR)
-  const [saving,   setSaving]   = useState(false)
-  const [editVar,  setEditVar]  = useState(null) // id being edited inline
+  const STD_SIZES = ['S', 'M', 'L', 'XL', '2XL', '3XL']
+  const [styleColor, setStyleColor] = useState('')
+  const [basePrice,  setBasePrice]  = useState('')
+  const [checked,    setChecked]    = useState({})   // size -> true
+  const [customSizes, setCustomSizes] = useState('') // comma separated extras
+  const [sizeData,   setSizeData]   = useState({})   // size -> { stock, price }
+  const [saving,     setSaving]     = useState(false)
 
-  function fv(k, v) { setNewVar(p => ({ ...p, [k]: v })) }
+  const customList = customSizes.split(',').map(s => s.trim()).filter(Boolean)
+    .filter(s => !STD_SIZES.includes(s.toUpperCase()))
+  const activeSizes = [...STD_SIZES.filter(s => checked[s]), ...customList]
 
-  async function addVariant() {
-    if (!newVar.color_style.trim() || !newVar.size.trim() || !newVar.price) return
+  function toggleSize(s) {
+    setChecked(prev => ({ ...prev, [s]: !prev[s] }))
+  }
+  function setSizeField(size, field, val) {
+    setSizeData(prev => ({ ...prev, [size]: { ...prev[size], [field]: val } }))
+  }
+  function priceFor(size) {
+    const explicit = sizeData[size]?.price
+    return explicit !== undefined && explicit !== '' ? explicit : basePrice
+  }
+
+  const canAdd = styleColor.trim() && activeSizes.length > 0 &&
+    activeSizes.every(s => priceFor(s) !== '' && !isNaN(parseFloat(priceFor(s))))
+
+  async function addVariants() {
+    if (!canAdd) return
     setSaving(true)
-    const payload = {
-      color_style: newVar.color_style.trim(),
-      size:        newVar.size.trim(),
-      price:       parseFloat(newVar.price),
-      stock:       parseInt(newVar.stock) || 0,
-      sort_order:  variants.length,
+    const rows = activeSizes.map((s, i) => ({
+      id: productId ? crypto.randomUUID() : `temp_${Date.now()}_${i}`,
+      color_style: styleColor.trim(),
+      size:        s,
+      price:       parseFloat(priceFor(s)),
+      stock:       parseInt(sizeData[s]?.stock) || 0,
+      sort_order:  variants.length + i,
       is_active:   true,
-    }
+    }))
     try {
       if (productId) {
-        // Generate UUID client-side — same ID used in DB and local state
-        // This means remove/update always find the right row, no read-back needed
-        const variantId = crypto.randomUUID()
-        const { error } = await supabase
-          .from('product_variants')
-          .insert({ ...payload, product_id: productId, id: variantId })
+        const dbRows = rows.map(r => ({ ...r, product_id: productId }))
+        const { error } = await supabase.from('product_variants').insert(dbRows)
         if (error) {
-          alert('Error saving variant: ' + error.message)
+          alert('Error saving variants: ' + error.message)
           return
         }
-        // Add to local state with the EXACT same ID that's now in the DB
-        setVariants(prev => [
-          ...prev,
-          { ...payload, product_id: productId, id: variantId }
-        ])
-      } else {
-        // Temp state — product not yet in DB (should not happen in phase 2)
         setVariants(prev => {
-          const next = [...prev, { ...payload, id: `temp_${Date.now()}` }]
-          variantsRef.current = next
+          const next = [...prev, ...dbRows]
+          if (variantsRef) variantsRef.current = next
+          return next
+        })
+      } else {
+        setVariants(prev => {
+          const next = [...prev, ...rows]
+          if (variantsRef) variantsRef.current = next
           return next
         })
       }
-      setNewVar(EMPTY_VAR)
+      // Reset builder for the next style/color
+      setStyleColor('')
+      setChecked({})
+      setCustomSizes('')
+      setSizeData({})
     } catch (err) {
-      alert('Error saving variant: ' + (err.message || 'Unknown error. Please try again.'))
+      alert('Error saving variants: ' + (err.message || 'Unknown error. Please try again.'))
     } finally {
-      // ALWAYS resets — button never gets permanently stuck disabled
       setSaving(false)
     }
   }
@@ -142,34 +160,74 @@ function VariantsEditor({ productId, variants, setVariants, variantsRef }) {
         </div>
       )}
 
-      {/* Add new variant row */}
+      {/* Add variants — one style, many sizes at once */}
       <div className="bg-white border border-parchment-dark p-3 space-y-3">
-        <p className="font-raleway text-xs uppercase tracking-wider text-mahogany/50">Add Variant</p>
+        <p className="font-raleway text-xs uppercase tracking-wider text-mahogany/50">Add Variants</p>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="font-raleway text-xs text-mahogany/40 block mb-1">Style / Color *</label>
-            <input value={newVar.color_style} onChange={e => fv('color_style', e.target.value)}
+            <input value={styleColor} onChange={e => setStyleColor(e.target.value)}
               className="input-field text-sm" placeholder="Indian, Black Eagle, Purple..."/>
           </div>
           <div>
-            <label className="font-raleway text-xs text-mahogany/40 block mb-1">Size *</label>
-            <input value={newVar.size} onChange={e => fv('size', e.target.value)}
-              className="input-field text-sm" placeholder="S, M, L, XL, 2XL, Youth M..."/>
-          </div>
-          <div>
-            <label className="font-raleway text-xs text-mahogany/40 block mb-1">Price ($) *</label>
-            <input type="number" step="0.01" min="0" value={newVar.price} onChange={e => fv('price', e.target.value)}
+            <label className="font-raleway text-xs text-mahogany/40 block mb-1">Price ($) — pre-fills every size *</label>
+            <input type="number" step="0.01" min="0" value={basePrice} onChange={e => setBasePrice(e.target.value)}
               className="input-field text-sm" placeholder="35.00"/>
           </div>
-          <div>
-            <label className="font-raleway text-xs text-mahogany/40 block mb-1">Stock *</label>
-            <input type="number" min="0" value={newVar.stock} onChange={e => fv('stock', e.target.value)}
-              className="input-field text-sm" placeholder="10"/>
+        </div>
+
+        <div>
+          <label className="font-raleway text-xs text-mahogany/40 block mb-2">Sizes available — check all that apply *</label>
+          <div className="flex flex-wrap gap-2">
+            {STD_SIZES.map(s => (
+              <button key={s} type="button" onClick={() => toggleSize(s)}
+                className={`font-raleway text-xs px-4 py-2 border transition-colors ${
+                  checked[s]
+                    ? 'bg-teal/10 border-teal text-teal-dark font-semibold'
+                    : 'border-parchment-dark text-mahogany/50 hover:border-gold'
+                }`}>
+                {checked[s] ? '✓ ' : ''}{s}
+              </button>
+            ))}
           </div>
         </div>
-        <button type="button" onClick={addVariant} disabled={saving || !newVar.color_style.trim() || !newVar.size.trim() || !newVar.price}
+
+        <div>
+          <label className="font-raleway text-xs text-mahogany/40 block mb-1">Other sizes (optional, comma separated)</label>
+          <input value={customSizes} onChange={e => setCustomSizes(e.target.value)}
+            className="input-field text-sm" placeholder="Youth M, Youth L, 4XL..."/>
+        </div>
+
+        {activeSizes.length > 0 && (
+          <div className="space-y-2">
+            <p className="font-raleway text-xs text-mahogany/40">Stock &amp; price per size — price is pre-filled, change any you need:</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              {activeSizes.map(s => (
+                <div key={s} className="border border-parchment-dark p-2 space-y-1.5 bg-parchment/50">
+                  <p className="font-cinzel text-sm font-semibold text-mahogany text-center">{s}</p>
+                  <div>
+                    <label className="font-raleway text-[10px] text-mahogany/40 block">Stock</label>
+                    <input type="number" min="0" value={sizeData[s]?.stock ?? ''}
+                      onChange={e => setSizeField(s, 'stock', e.target.value)}
+                      className="input-field text-sm py-1 w-full" placeholder="0"/>
+                  </div>
+                  <div>
+                    <label className="font-raleway text-[10px] text-mahogany/40 block">Price ($)</label>
+                    <input type="number" step="0.01" min="0" value={priceFor(s)}
+                      onChange={e => setSizeField(s, 'price', e.target.value)}
+                      className="input-field text-sm py-1 w-full" placeholder="35.00"/>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <button type="button" onClick={addVariants} disabled={saving || !canAdd}
           className="btn-outline text-xs px-4 py-2 flex items-center gap-2 disabled:opacity-40">
-          {saving ? <><div className="w-3 h-3 border border-mahogany border-t-transparent rounded-full animate-spin"/>Adding...</> : '+ Add Variant'}
+          {saving
+            ? <><div className="w-3 h-3 border border-mahogany border-t-transparent rounded-full animate-spin"/>Adding...</>
+            : `+ Add ${activeSizes.length > 0 ? activeSizes.length + ' ' : ''}Variant${activeSizes.length === 1 ? '' : 's'}`}
         </button>
       </div>
 
