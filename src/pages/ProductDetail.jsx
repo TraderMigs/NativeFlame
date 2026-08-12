@@ -97,8 +97,17 @@ export default function ProductDetail() {
     : (product?.stock ?? 0)
 
   const effectivePrice = product?.has_variants
-    ? (selectedVariant?.price ?? (sizesForColor[0]?.price ?? product?.price))
+    ? (selectedVariant?.price
+        ?? (sizesForColor.length > 0
+              ? Math.min(...sizesForColor.map(v => Number(v.price)))
+              : (product?.min_variant_price ?? product?.price)))
     : product?.price
+
+  // "From" prefix only before a full selection, and only when variant prices differ
+  const showFromPrefix = product?.has_variants
+    && !selectedVariant
+    && product?.min_variant_price != null
+    && Number(product.min_variant_price) !== Number(product.max_variant_price ?? product.min_variant_price)
 
   function handleAddToCart() {
     if (product.has_variants) {
@@ -217,7 +226,7 @@ export default function ProductDetail() {
               <h1 className="font-cinzel text-4xl md:text-5xl font-bold text-mahogany">{product.name}</h1>
               <div className="flex items-center gap-4 mt-3">
                 <span className="font-cinzel text-3xl font-bold text-gold">
-                  ${Number(effectivePrice || product.price).toFixed(2)}
+                  {showFromPrefix ? 'From ' : ''}${Number(effectivePrice || product.price).toFixed(2)}
                 </span>
                 {!product.has_variants && product.size_oz && (
                   <span className="font-raleway text-sm text-mahogany/50">Net Wt. {product.size_oz} oz</span>
