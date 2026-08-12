@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { supabase, getImageUrl } from '../../lib/supabase'
+import { supabase, getImageUrl, imgColor } from '../../lib/supabase'
 
 // Product types loaded from Supabase
 // ── Variants Editor Sub-Component ──────────────────────────────────
@@ -196,6 +196,7 @@ export default function AdminProducts() {
   const [uploadingImages, setUploadingImages] = useState(false)
   const [pendingImages, setPendingImages] = useState([]) // File objects
   const [previewUrls, setPreviewUrls] = useState([])
+  const [pendingColors, setPendingColors] = useState([]) // color tag per pending image
   const [existingImages, setExistingImages] = useState([])
   const [deleteConfirm,   setDeleteConfirm]   = useState(null)
   const [variants,        setVariants]        = useState([])
@@ -246,6 +247,7 @@ export default function AdminProducts() {
     setVariants([])
     setPendingImages([])
     setPreviewUrls([])
+    setPendingColors([])
     setExistingImages([])
     setShowForm(true)
   }
@@ -269,6 +271,7 @@ export default function AdminProducts() {
     setExistingImages(product.images || [])
     setPendingImages([])
     setPreviewUrls([])
+    setPendingColors([])
     setShowForm(true)
   }
 
@@ -277,12 +280,26 @@ export default function AdminProducts() {
     setPendingImages(prev => [...prev, ...files])
     const urls = files.map(f => URL.createObjectURL(f))
     setPreviewUrls(prev => [...prev, ...urls])
+    setPendingColors(prev => [...prev, ...files.map(() => '')])
   }
 
   function removePendingImage(i) {
     URL.revokeObjectURL(previewUrls[i])
     setPendingImages(prev => prev.filter((_, idx) => idx !== i))
     setPreviewUrls(prev => prev.filter((_, idx) => idx !== i))
+    setPendingColors(prev => prev.filter((_, idx) => idx !== i))
+  }
+
+  function tagPendingColor(i, color) {
+    setPendingColors(prev => prev.map((cVal, idx) => idx === i ? color : cVal))
+  }
+
+  function tagExistingColor(i, color) {
+    setExistingImages(prev => prev.map((img, idx) => {
+      if (idx !== i) return img
+      const path = typeof img === 'string' ? img : img.path
+      return { path, color: color || null }
+    }))
   }
 
   function removeExistingImage(i) {
@@ -290,17 +307,22 @@ export default function AdminProducts() {
   }
 
   async function uploadImages(productId) {
-    if (pendingImages.length === 0) return existingImages
+    // Normalize every image to { path, color } so tags persist
+    const normalizedExisting = existingImages.map(img =>
+      typeof img === 'string' ? { path: img, color: null } : img
+    )
+    if (pendingImages.length === 0) return normalizedExisting
     setUploadingImages(true)
     const uploaded = []
-    for (const file of pendingImages) {
+    for (let i = 0; i < pendingImages.length; i++) {
+      const file = pendingImages[i]
       const ext = file.name.split('.').pop()
       const path = `${productId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
       const { error } = await supabase.storage.from('product-images').upload(path, file, { upsert: true })
-      if (!error) uploaded.push(path)
+      if (!error) uploaded.push({ path, color: pendingColors[i] || null })
     }
     setUploadingImages(false)
-    return [...existingImages, ...uploaded]
+    return [...normalizedExisting, ...uploaded]
   }
 
   async function handleSave(e) {
@@ -534,12 +556,26 @@ export default function AdminProducts() {
 
                   {/* Existing Images */}
                   {existingImages.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-3">
+                    <div className="flex flex-wrap gap-3 mb-3">
                       {existingImages.map((img, i) => (
-                        <div key={i} className="relative w-20 h-20">
-                          <img src={getImageUrl(img)} alt="" className="w-full h-full object-cover" />
-                          <button type="button" onClick={() => removeExistingImage(i)}
-                            className="absolute top-1 right-1 bg-red-500 text-white w-5 h-5 flex items-center justify-center text-xs rounded-full">×</button>
+                        <div key={i} className="w-20">
+                          <div className="relative w-20 h-20">
+                            <img src={getImageUrl(img)} alt="" className="w-full h-full object-cover" />
+                            <button type="button" onClick={() => removeExistingImage(i)}
+                              className="absolute top-1 right-1 bg-red-500 text-white w-5 h-5 flex items-center justify-center text-xs rounded-full">×</button>
+                          </div>
+                          {form.product_type && form.product_type.includes('tshirt') && (
+                            <select
+                              value={imgColor(img) || ''}
+                              onChange={e => tagExistingColor(i, e.target.value)}
+                              className="mt-1 w-20 text-[10px] font-raleway border border-parchment-dark bg-white px-1 py-0.5"
+                            >
+                              <option value="">General</option>
+                              {[...new Set(variants.map(v => v.color_style).filter(Boolean))].map(cName => (
+                                <option key={cName} value={cName}>{cName}</option>
+                              ))}
+                            </select>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -547,12 +583,26 @@ export default function AdminProducts() {
 
                   {/* New image previews */}
                   {previewUrls.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-3">
+                    <div className="flex flex-wrap gap-3 mb-3">
                       {previewUrls.map((url, i) => (
-                        <div key={i} className="relative w-20 h-20">
-                          <img src={url} alt="" className="w-full h-full object-cover" />
-                          <button type="button" onClick={() => removePendingImage(i)}
-                            className="absolute top-1 right-1 bg-red-500 text-white w-5 h-5 flex items-center justify-center text-xs rounded-full">×</button>
+                        <div key={i} className="w-20">
+                          <div className="relative w-20 h-20">
+                            <img src={url} alt="" className="w-full h-full object-cover" />
+                            <button type="button" onClick={() => removePendingImage(i)}
+                              className="absolute top-1 right-1 bg-red-500 text-white w-5 h-5 flex items-center justify-center text-xs rounded-full">×</button>
+                          </div>
+                          {form.product_type && form.product_type.includes('tshirt') && (
+                            <select
+                              value={pendingColors[i] || ''}
+                              onChange={e => tagPendingColor(i, e.target.value)}
+                              className="mt-1 w-20 text-[10px] font-raleway border border-parchment-dark bg-white px-1 py-0.5"
+                            >
+                              <option value="">General</option>
+                              {[...new Set(variants.map(v => v.color_style).filter(Boolean))].map(cName => (
+                                <option key={cName} value={cName}>{cName}</option>
+                              ))}
+                            </select>
+                          )}
                         </div>
                       ))}
                     </div>
