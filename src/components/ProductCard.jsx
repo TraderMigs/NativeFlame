@@ -26,12 +26,12 @@ export default function ProductCard({ product }) {
     <Link to={`/product/${product.id}`} className="group block">
       <div className="card-candle">
         {/* Image */}
-        <div className={`relative aspect-square overflow-hidden ${isDark ? 'bg-mahogany' : 'bg-parchment'}`}>
+        <div className={`relative aspect-square overflow-hidden ${product.has_variants ? 'bg-white' : isDark ? 'bg-mahogany' : 'bg-parchment'}`}>
           {imageUrl ? (
             <img
               src={imageUrl}
               alt={product.name}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              className={`w-full h-full transition-transform duration-500 group-hover:scale-105 ${product.has_variants ? 'object-contain' : 'object-cover'}`}
             />
           ) : (
             <div className={`w-full h-full flex items-center justify-center ${isDark ? 'bg-mahogany' : 'bg-parchment'}`}>
@@ -88,7 +88,11 @@ export default function ProductCard({ product }) {
 
           <div className="flex items-center justify-between mt-4">
             <span className="font-cinzel font-bold text-lg text-gold">
-              ${Number(product.price).toFixed(2)}
+              {product.has_variants && product.min_variant_price != null
+                ? (Number(product.min_variant_price) !== Number(product.max_variant_price ?? product.min_variant_price)
+                    ? `From $${Number(product.min_variant_price).toFixed(2)}`
+                    : `$${Number(product.min_variant_price).toFixed(2)}`)
+                : `$${Number(product.price).toFixed(2)}`}
             </span>
 
             {product.has_variants ? (
