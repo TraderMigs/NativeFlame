@@ -61,7 +61,11 @@ function VariantsEditor({ productId, variants, setVariants, variantsRef }) {
     if (!id.startsWith('temp_') && productId) {
       await supabase.from('product_variants').delete().eq('id', id)
     }
-    setVariants(prev => prev.filter(v => v.id !== id))
+    setVariants(prev => {
+      const next = prev.filter(v => v.id !== id)
+      if (variantsRef) variantsRef.current = next
+      return next
+    })
   }
 
   async function updateVariantStock(id, stock) {
@@ -79,7 +83,11 @@ function VariantsEditor({ productId, variants, setVariants, variantsRef }) {
       : field === 'stock'
         ? parseInt(raw) || 0
         : raw  // color_style and size stay as strings
-    setVariants(prev => prev.map(v => v.id === id ? { ...v, [field]: value } : v))
+    setVariants(prev => {
+      const next = prev.map(v => v.id === id ? { ...v, [field]: value } : v)
+      if (variantsRef) variantsRef.current = next
+      return next
+    })
     if (!id.startsWith('temp_') && productId) {
       await supabase.from('product_variants').update({ [field]: value }).eq('id', id)
     }
@@ -333,19 +341,28 @@ export default function AdminProducts() {
     if (error) {
       alert('Error saving product: ' + error.message)
     } else {
-      await loadProducts()
+      // NEW t-shirt: save all variants entered on this same screen
       if (isVariantProduct && !editId) {
-        // Phase 1 complete for NEW t-shirt — keep modal open for variants
-        setEditId(productId)
-        setEditProductId(productId)
-        setVariants([])
-        variantsRef.current = []
-        setVariantPhase(true)
-      } else {
-        // Non-variant product, or editing existing — close normally
-        setShowForm(false)
-        setVariantPhase(false)
+        const temps = variantsRef.current || []
+        if (temps.length > 0) {
+          const rows = temps.map((v, i) => ({
+            product_id:  productId,
+            color_style: v.color_style,
+            size:        v.size,
+            price:       parseFloat(v.price) || 0,
+            stock:       parseInt(v.stock) || 0,
+            sort_order:  i,
+            is_active:   true,
+          }))
+          const { error: vErr } = await supabase.from('product_variants').insert(rows)
+          if (vErr) {
+            alert('Product saved, but variants failed to save: ' + vErr.message + '\nOpen the product with the Variants button to add them.')
+          }
+        }
       }
+      await loadProducts()
+      setShowForm(false)
+      setVariantPhase(false)
     }
     setSaving(false)
   }
@@ -485,8 +502,8 @@ export default function AdminProducts() {
                   </div>
                 )}
 
-                {/* ── VARIANTS SECTION — only when EDITING existing t-shirt ── */}
-                {editId && form.product_type && form.product_type.includes('tshirt') && (
+                {/* ── VARIANTS SECTION — new AND existing t-shirts, one screen ── */}
+                {form.product_type && form.product_type.includes('tshirt') && (
                   <VariantsEditor
                     productId={editProductId}
                     variants={variants}
