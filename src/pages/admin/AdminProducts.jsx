@@ -559,8 +559,8 @@ export default function AdminProducts() {
                     <div className="flex flex-wrap gap-3 mb-3">
                       {existingImages.map((img, i) => (
                         <div key={i} className="w-20">
-                          <div className="relative w-20 h-20">
-                            <img src={getImageUrl(img)} alt="" className="w-full h-full object-cover" />
+                          <div className="relative w-20 h-20 bg-white border border-parchment-dark">
+                            <img src={getImageUrl(img)} alt="" className="w-full h-full object-contain" />
                             <button type="button" onClick={() => removeExistingImage(i)}
                               className="absolute top-1 right-1 bg-red-500 text-white w-5 h-5 flex items-center justify-center text-xs rounded-full">×</button>
                           </div>
@@ -586,8 +586,8 @@ export default function AdminProducts() {
                     <div className="flex flex-wrap gap-3 mb-3">
                       {previewUrls.map((url, i) => (
                         <div key={i} className="w-20">
-                          <div className="relative w-20 h-20">
-                            <img src={url} alt="" className="w-full h-full object-cover" />
+                          <div className="relative w-20 h-20 bg-white border border-parchment-dark">
+                            <img src={url} alt="" className="w-full h-full object-contain" />
                             <button type="button" onClick={() => removePendingImage(i)}
                               className="absolute top-1 right-1 bg-red-500 text-white w-5 h-5 flex items-center justify-center text-xs rounded-full">×</button>
                           </div>
@@ -709,9 +709,9 @@ export default function AdminProducts() {
             {products.map(product => (
               <div key={product.id} className="bg-white border border-parchment-dark flex items-center gap-4 p-4">
                 {/* Image */}
-                <div className="w-16 h-16 bg-parchment shrink-0 overflow-hidden">
+                <div className="w-16 h-16 bg-white shrink-0 overflow-hidden border border-parchment-dark">
                   {product.images && product.images[0] ? (
-                    <img src={getImageUrl(product.images[0])} alt="" className="w-full h-full object-cover" />
+                    <img src={getImageUrl(product.images[0])} alt="" className="w-full h-full object-contain" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-2xl">🕯️</div>
                   )}
